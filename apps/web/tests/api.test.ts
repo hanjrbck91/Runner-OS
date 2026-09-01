@@ -141,6 +141,15 @@ describe('M07-D — API handlers', () => {
     expect(body(r).error.code).toBe('PLAN_AMBIGUOUS');
   });
 
+  it('T18 clear-only create is rejected (no blank row via {field:null})', async () => {
+    const r = await H.saveWeight(env, { session: valid, body: { weight: null } });
+    expect(r.status).toBe(400);
+    expect(body(r).error.code).toBe('NO_FIELDS');
+    // nothing persisted
+    const t = await H.today(env, { session: valid });
+    expect(body(t).data.daily).toBeNull();
+  });
+
   it('T17 no DB internals leak; 404 mapping; safe error shape', async () => {
     const r = await H.plan(env, { session: valid, query: { date: '2026-01-15' } });
     expect(r.status).toBe(404);

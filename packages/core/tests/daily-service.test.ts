@@ -116,6 +116,20 @@ describe('DailyService', () => {
     expect(deps.daily.records.length).toBe(0);
   });
 
+  it('rejects clear-only create (null values) with NO_FIELDS — no blank row', async () => {
+    const r = await svc.daily.save(ctx, { date: DATE, fields: { weight: null, noteText: '' } });
+    expect(r.ok).toBe(false);
+    expect(r.error?.code).toBe('NO_FIELDS');
+    expect(deps.daily.records.length).toBe(0);
+  });
+
+  it('clearing a field on an EXISTING record still works (update path)', async () => {
+    await unwrap(svc.daily.save(ctx, { date: DATE, fields: { weight: 76, noteText: 'hi' } }));
+    const cleared = await unwrap(svc.daily.save(ctx, { date: DATE, fields: { noteText: null } }));
+    expect(cleared.noteText).toBeNull();
+    expect(cleared.weight).toBe(76); // untouched
+  });
+
   it('createActive race: two creates converge to one merged active row', async () => {
     const [a, b] = await Promise.all([
       svc.daily.save(ctx, { date: DATE, fields: { weight: 76 } }),

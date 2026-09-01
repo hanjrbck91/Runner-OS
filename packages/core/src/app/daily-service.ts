@@ -47,9 +47,12 @@ export class DailyService {
     const existing = await this.deps.daily.getActiveByDate(ctx.userId, date);
     if (existing) return this.applyUpdate(ctx, existing, v.normalized, input.reason ?? '');
 
-    // Create path: reject a blank create (no user-controlled fields).
-    if (Object.keys(v.normalized).length === 0) {
-      return fail('NO_FIELDS', 'nothing to save: no Daily fields supplied');
+    // Create path: reject a blank create. A payload with no fields — OR only
+    // clear/null values — has nothing to store, so it must not create a blank
+    // active Daily row (which would also occupy the one-active-per-date slot).
+    const hasValue = Object.values(v.normalized).some((val) => val !== null);
+    if (!hasValue) {
+      return fail('NO_FIELDS', 'nothing to save: no Daily values supplied');
     }
     return this.applyCreate(ctx, date, v.normalized, input.reason ?? '');
   }
