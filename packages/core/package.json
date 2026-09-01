@@ -1,0 +1,14 @@
+{
+  "name": "@runner-os/core",
+  "version": "0.7.0",
+  "private": true,
+  "description": "Framework-free Runner OS domain + application layer. No Next.js, React, Drizzle, Postgres, or Apps Script dependencies.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./adapters/memory": "./src/adapters/memory/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -b"
+  }
+}

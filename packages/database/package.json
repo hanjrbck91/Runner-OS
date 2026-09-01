@@ -1,0 +1,17 @@
+{
+  "name": "@runner-os/database",
+  "version": "0.7.0",
+  "private": true,
+  "description": "PostgreSQL + Drizzle implementations of the @runner-os/core repository ports. Integration-tested against real Postgres (pglite in tests; node-postgres/Neon in production).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@runner-os/core": "*",
+    "drizzle-orm": "^0.38.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.15"
+  }
+}

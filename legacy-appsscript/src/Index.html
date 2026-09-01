@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    /* Runner OS — retro athletic PDA. Monochrome LCD, monospace, boxy. */
+    :root{
+      --bg:#0f120d; --panel:#1b2016; --lcd:#c7d6b0; --lcd-dim:#7f8f6b;
+      --ink:#dfeccb; --line:#3a4530; --accent:#a7c06a; --err:#e0a35a; --ok:#9fd07a;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+      font-family:"Courier New",Consolas,monospace;-webkit-text-size-adjust:100%}
+    body{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+    .screen{flex:1;padding:12px}
+    .bar{background:var(--panel);border-bottom:2px solid var(--line);
+      padding:8px 12px;display:flex;justify-content:space-between;align-items:center}
+    .brand{letter-spacing:2px;color:var(--accent);font-weight:bold}
+    .stamp{color:var(--lcd-dim);font-size:12px}
+    .panel{background:var(--panel);border:2px solid var(--line);border-radius:4px;
+      padding:12px;margin-bottom:12px}
+    .lcd{color:var(--lcd)}
+    h1{font-size:16px;letter-spacing:3px;margin:0 0 10px;color:var(--accent)}
+    .big{font-size:26px;letter-spacing:2px;color:var(--lcd);margin:2px 0}
+    .kv{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);
+      padding:6px 0}
+    .kv .k{color:var(--lcd-dim);letter-spacing:1px}
+    .kv .v{color:var(--ink);text-align:right}
+    label{display:block;color:var(--lcd-dim);letter-spacing:1px;margin:10px 0 4px;font-size:13px}
+    input,textarea,select{width:100%;background:#0c0f09;color:var(--lcd);
+      border:2px solid var(--line);border-radius:3px;padding:12px;font:inherit;font-size:18px}
+    textarea{min-height:120px;resize:vertical}
+    .row{display:flex;gap:8px}
+    .row>*{flex:1}
+    button{font:inherit;letter-spacing:2px;border:2px solid var(--line);border-radius:3px;
+      background:#252c1d;color:var(--ink);padding:14px;width:100%;cursor:pointer}
+    button.primary{background:var(--accent);color:#10140c;font-weight:bold;border-color:var(--accent)}
+    button:disabled{opacity:.5}
+    .seg{display:flex;gap:6px;flex-wrap:wrap}
+    .seg button{width:auto;flex:1;min-width:64px;padding:12px 8px}
+    .seg button.sel{background:var(--accent);color:#10140c;border-color:var(--accent)}
+    .toggle{display:flex;gap:8px}
+    .toggle button{flex:1}
+    .nav{display:flex;border-top:2px solid var(--line);background:var(--panel)}
+    .nav button{border:none;border-right:1px solid var(--line);border-radius:0;background:transparent;
+      color:var(--lcd-dim);padding:12px 4px;font-size:12px;letter-spacing:1px}
+    .nav button.active{color:var(--accent)}
+    .msg{padding:10px;border-radius:3px;margin-bottom:12px;letter-spacing:1px}
+    .msg.err{border:2px solid var(--err);color:var(--err)}
+    .msg.ok{border:2px solid var(--ok);color:var(--ok)}
+    .muted{color:var(--lcd-dim)}
+    .center{text-align:center}
+    .loading{color:var(--lcd-dim);letter-spacing:2px;padding:24px 0;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span class="brand">RUNNER&middot;OS</span>
+    <span class="stamp" id="stamp">--</span>
+  </div>
+  <div class="screen" id="app"><div class="loading">BOOTING&hellip;</div></div>
+  <div class="nav" id="nav"></div>
+
+<script>
+  var INITIAL_ACTION = '<?= initialAction ?>';
+  var VIEWS = ['today','weight','run','gym','note','weekly'];
+  var LABELS = {today:'TODAY',weight:'WEIGHT',run:'RUN',gym:'GYM',note:'NOTE',weekly:'WEEK'};
+  var todayData = null;      // cached getToday() result
+  var current = 'today';
+  var busy = false;          // global submit guard
+
+  // --- service bridge (server calls only; no direct Sheet access here) ---
+  function api(fn, arg){
+    return new Promise(function(res, rej){
+      google.script.run.withSuccessHandler(res).withFailureHandler(function(e){
+        rej(e && e.message ? e.message : 'Service error');
+      })[fn](arg);
+    });
+  }
+
+  function el(html){ var d=document.createElement('div'); d.innerHTML=html; return d.firstElementChild; }
+  function app(){ return document.getElementById('app'); }
+  function setLoading(t){ app().innerHTML = '<div class="loading">'+(t||'LOADING')+'&hellip;</div>'; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function renderNav(){
+    var n=document.getElementById('nav'); n.innerHTML='';
+    VIEWS.forEach(function(v){
+      var b=el('<button>'+LABELS[v]+'</button>');
+      if(v===current) b.className='active';
+      b.onclick=function(){ show(v); };
+      n.appendChild(b);
+    });
+  }
+
+  function banner(kind,text){ return '<div class="msg '+kind+'">'+esc(text)+'</div>'; }
+
+  // --- navigation ---
+  function show(action){
+    current = VIEWS.indexOf(action)!==-1 ? action : 'today';
+    history.replaceState(null,'','?action='+current);
+    renderNav();
+    if(current==='weekly'){ return renderWeekly(); }
+    // views that depend on today data
+    if(todayData){ dispatch(); }
+    else { loadToday().then(dispatch).catch(function(m){ app().innerHTML=banner('err',m)+retryBtn('show'); }); }
+  }
+  function dispatch(){
+    if(current==='today') return renderToday();
+    if(current==='weight') return renderWeight();
+    if(current==='run') return renderRun();
+    if(current==='gym') return renderGym();
+    if(current==='note') return renderNote();
+  }
+  function retryBtn(kind){ var b='<button class="primary" onclick="show(current)">RETRY</button>'; return b; }
+
+  function loadToday(){
+    setLoading('SYNCING');
+    return api('getToday').then(function(r){
+      if(!r.ok) throw (r.error && r.error.message)||'Load failed';
+      todayData=r.data; document.getElementById('stamp').textContent=r.data.dateLabel; return r.data;
+    });
+  }
+
+  // --- TODAY ---
+  function renderToday(){
+    var d=todayData; var h='';
+    h+='<div class="panel"><h1>TODAY</h1>';
+    h+='<div class="big">'+esc(d.dateLabel)+'</div>';
+    if(d.planStatus==='FOUND'){
+      h+='<div class="kv"><span class="k">WEEK</span><span class="v">'+esc(d.weekNumber||'-')+'</span></div>';
+      h+='<div class="kv"><span class="k">PHASE</span><span class="v">'+esc(d.phase||'-')+'</span></div>';
+      h+=planLine('RUN', d.plan.RUN_PLAN);
+      h+=planLine('LONG', d.plan.LONG_RUN_PLAN);
+      h+=planLine('QUALITY', d.plan.QUALITY_PLAN);
+      h+=planLine('GYM', d.plan.GYM_PLAN);
+      h+=planLine('RECOVERY', d.plan.RECOVERY_PLAN);
+      h+=planLine('MILESTONE', d.plan.MILESTONE);
+    } else if(d.planStatus==='NONE'){
+      h+='<div class="muted center" style="padding:16px 0">NO PLAN SCHEDULED</div>';
+    } else if(d.planStatus==='AMBIGUOUS'){
+      h+=banner('err','PLAN CONFLICT — multiple active plans for today. Fix plan versions.');
+    } else {
+      h+=banner('err','PLAN ERROR');
+    }
+    h+='</div>';
+    // logged snapshot
+    h+='<div class="panel"><h1>LOGGED</h1>'+loggedSummary(d.daily)+'</div>';
+    app().innerHTML=h;
+  }
+  function planLine(k,v){ if(v==null||v==='') return '';
+    return '<div class="kv"><span class="k">'+k+'</span><span class="v">'+esc(v)+'</span></div>'; }
+  function loggedSummary(day){
+    if(!day) return '<div class="muted">Nothing logged yet.</div>';
+    var f=[['WEIGHT',day.WEIGHT,'kg'],['SLEEP',day.SLEEP_HOURS,'h'],['RUN',day.RUN_ACTUAL_KM,'km'],
+      ['RPE',day.RUN_RPE,''],['PAIN',day.PAIN_SCORE,''],['GYM',day.GYM_DONE===true?'DONE':(day.GYM_DONE===false?'NO':''),''],
+      ['NUTRITION',day.NUTRITION_ADHERENCE,'']];
+    var h='';
+    f.forEach(function(x){ if(x[1]!==''&&x[1]!=null){ h+='<div class="kv"><span class="k">'+x[0]+
+      '</span><span class="v">'+esc(x[1])+' '+x[2]+'</span></div>'; } });
+    if(day.NOTE_TEXT) h+='<div class="kv"><span class="k">NOTE</span><span class="v">'+esc(day.NOTE_TEXT)+'</span></div>';
+    return h||'<div class="muted">Nothing logged yet.</div>';
+  }
+
+  // --- WEIGHT ---
+  function renderWeight(){
+    var day=todayData.daily||{};
+    var h='<div class="panel"><h1>WEIGHT</h1>'+
+      '<label>WEIGHT (kg)</label><input id="f_weight" type="number" inputmode="decimal" step="0.1" value="'+val(day.WEIGHT)+'">'+
+      '<label>SLEEP (h)</label><input id="f_sleep" type="number" inputmode="decimal" step="0.1" value="'+val(day.SLEEP_HOURS)+'">'+
+      '<div id="wmsg"></div>'+
+      '<div style="margin-top:12px"><button class="primary" id="save">SAVE</button></div></div>';
+    app().innerHTML=h;
+    bindSave('save','wmsg','saveWeight',function(){
+      return { weight:numOrOmit('f_weight'), sleep:numOrOmit('f_sleep') };
+    });
+  }
+
+  // --- RUN ---
+  function renderRun(){
+    var d=todayData, day=d.daily||{};
+    var planTxt = d.planStatus==='FOUND' ? (d.plan.RUN_PLAN||d.plan.LONG_RUN_PLAN||d.plan.QUALITY_PLAN||'—') : '—';
+    var h='<div class="panel"><h1>RUN</h1>'+
+      '<div class="muted">TODAY\'S PLAN</div><div class="big">'+esc(planTxt)+'</div></div>';
+    h+='<div class="panel">'+
+      '<label>ACTUAL KM</label><input id="f_km" type="number" inputmode="decimal" step="0.1" value="'+val(day.RUN_ACTUAL_KM)+'">'+
+      '<label>RPE (1-10)</label><input id="f_rpe" type="number" inputmode="numeric" min="1" max="10" value="'+val(day.RUN_RPE)+'">'+
+      '<label>PAIN (0-3)</label>'+segHtml('f_pain',[0,1,2,3], day.PAIN_SCORE)+
+      '<label>NOTE</label><textarea id="f_note">'+esc(day.NOTE_TEXT||'')+'</textarea>'+
+      '<div id="rmsg"></div>'+
+      '<div style="margin-top:12px"><button class="primary" id="save">SAVE</button></div></div>';
+    app().innerHTML=h;
+    initSeg('f_pain');
+    bindSave('save','rmsg','saveRun',function(){
+      return { km:numOrOmit('f_km'), rpe:numOrOmit('f_rpe'), pain:segVal('f_pain'), note:textOrOmit('f_note') };
+    });
+  }
+
+  // --- GYM ---
+  function renderGym(){
+    var d=todayData, day=d.daily||{};
+    var planTxt = d.planStatus==='FOUND' ? (d.plan.GYM_PLAN||'—') : '—';
+    var cur = day.GYM_DONE===true ? 'yes' : (day.GYM_DONE===false ? 'no' : '');
+    var h='<div class="panel"><h1>GYM</h1><div class="big">'+esc(planTxt)+'</div>'+
+      '<label>COMPLETED?</label><div class="toggle">'+
+      '<button id="g_yes" class="'+(cur==='yes'?'sel':'')+'">YES</button>'+
+      '<button id="g_no" class="'+(cur==='no'?'sel':'')+'">NO</button></div>'+
+      '<div id="gmsg"></div>'+
+      '<div style="margin-top:12px"><button class="primary" id="save">SAVE</button></div></div>';
+    app().innerHTML=h;
+    var sel=cur;
+    document.getElementById('g_yes').onclick=function(){ sel='yes'; mark(); };
+    document.getElementById('g_no').onclick=function(){ sel='no'; mark(); };
+    function mark(){ document.getElementById('g_yes').className=sel==='yes'?'sel':'';
+      document.getElementById('g_no').className=sel==='no'?'sel':''; }
+    bindSave('save','gmsg','saveGym',function(){
+      if(sel==='') return null; // nothing chosen -> omit
+      return { completed: sel==='yes' };
+    });
+  }
+
+  // --- NOTE ---
+  function renderNote(){
+    var day=todayData.daily||{};
+    var h='<div class="panel"><h1>NOTE</h1>'+
+      '<textarea id="f_note">'+esc(day.NOTE_TEXT||'')+'</textarea>'+
+      '<div id="nmsg"></div>'+
+      '<div style="margin-top:12px"><button class="primary" id="save">SAVE</button></div></div>';
+    app().innerHTML=h;
+    bindSave('save','nmsg','saveNote',function(){ return { note:textOrOmit('f_note') }; });
+  }
+
+  // --- WEEKLY (read-only) ---
+  function renderWeekly(){
+    setLoading('CALC');
+    api('getWeekly').then(function(r){
+      if(!r.ok){ app().innerHTML=banner('err',(r.error&&r.error.message)||'Weekly failed')+retryBtn(); return; }
+      var w=r.data; var rows=[
+        ['AVG WEIGHT',w.AVERAGE_WEIGHT,'kg'],['WEIGHT TREND',w.WEIGHT_TREND,'kg'],
+        ['TOTAL KM',w.TOTAL_RUNNING_KM,''],['LONGEST',w.LONGEST_RUN,'km'],
+        ['RUNS',w.NUMBER_OF_RUNS,''],['GYM',w.NUMBER_OF_GYM_SESSIONS,''],
+        ['AVG SLEEP',w.AVERAGE_SLEEP,'h'],['AVG RPE',w.AVERAGE_RPE,''],
+        ['PAIN FLAGS',w.PAIN_FLAG_COUNT,''],['NUTRITION',w.NUTRITION_ADHERENCE,''],
+        ['COMPLETION',w.COMPLETION_PERCENTAGE,'%'],['MISSED',w.MISSED_SESSIONS,'']];
+      var h='<div class="panel"><h1>WEEK</h1><div class="muted">'+esc(w.WEEK_START_DATE)+' &rarr; '+esc(w.WEEK_END_DATE)+'</div>';
+      rows.forEach(function(x){ h+='<div class="kv"><span class="k">'+x[0]+'</span><span class="v">'+
+        (x[1]===''||x[1]==null?'&mdash;':esc(x[1])+' '+x[2])+'</span></div>'; });
+      h+='</div>';
+      if(w.REFLECTION_TEXT) h+='<div class="panel"><h1>REFLECTION</h1><div class="lcd">'+esc(w.REFLECTION_TEXT)+'</div></div>';
+      app().innerHTML=h;
+    }).catch(function(m){ app().innerHTML=banner('err',m)+retryBtn(); });
+  }
+
+  // --- shared input helpers ---
+  function val(v){ return (v==null||v==='') ? '' : esc(v); }
+  function numOrOmit(id){ var v=document.getElementById(id).value.trim();
+    return v==='' ? undefined : v; }              // '' -> omit (leave unchanged)
+  function textOrOmit(id){ var v=document.getElementById(id).value;
+    return v==='' ? undefined : v; }
+  function segHtml(id,opts,cur){
+    var h='<div class="seg" id="'+id+'">';
+    opts.forEach(function(o){ h+='<button data-v="'+o+'" class="'+(String(cur)===String(o)?'sel':'')+'">'+o+'</button>'; });
+    return h+'</div>';
+  }
+  function initSeg(id){ var box=document.getElementById(id);
+    Array.prototype.forEach.call(box.children,function(b){ b.onclick=function(){
+      Array.prototype.forEach.call(box.children,function(c){ c.className=''; }); b.className='sel'; }; }); }
+  function segVal(id){ var box=document.getElementById(id);
+    var s=box.querySelector('.sel'); return s ? Number(s.getAttribute('data-v')) : undefined; }
+
+  // --- save with loading + double-submit guard + success/refresh ---
+  function bindSave(btnId,msgId,fn,collect){
+    var btn=document.getElementById(btnId);
+    btn.onclick=function(){
+      if(busy) return;
+      var payload=collect();
+      if(payload===null){ document.getElementById(msgId).innerHTML=banner('err','Nothing to save.'); return; }
+      busy=true; btn.disabled=true; var old=btn.textContent; btn.textContent='SAVING…';
+      document.getElementById(msgId).innerHTML='';
+      api(fn,payload).then(function(r){
+        if(!r.ok){
+          document.getElementById(msgId).innerHTML=banner('err', friendly(r.error));
+          busy=false; btn.disabled=false; btn.textContent=old; return;
+        }
+        todayData.daily=r.data;                     // refresh cache, no browser reload
+        document.getElementById(msgId).innerHTML=banner('ok','SAVED');
+        btn.textContent='SAVED';
+        setTimeout(function(){ busy=false; btn.disabled=false; btn.textContent=old; },700);
+      }).catch(function(m){
+        document.getElementById(msgId).innerHTML=banner('err', m);
+        busy=false; btn.disabled=false; btn.textContent=old;
+      });
+    };
+  }
+  function friendly(err){
+    if(!err) return 'Save failed.';
+    if(err.code==='VALIDATION'){
+      var d=err.details&&err.details.errors&&err.details.errors[0];
+      return 'Invalid input: '+((d&&d.message)||'check values');
+    }
+    if(err.code==='INTEGRITY_DUPLICATE') return 'Data conflict for today. Contact admin.';
+    return err.message||'Save failed.';
+  }
+
+  // --- boot ---
+  (function(){ renderNav(); show(VIEWS.indexOf(INITIAL_ACTION)!==-1?INITIAL_ACTION:'today'); })();
+</script>
+</body>
+</html>

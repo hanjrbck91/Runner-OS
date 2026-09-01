@@ -1,0 +1,13 @@
+{
+  "name": "@runner-os/shared",
+  "version": "0.7.0",
+  "private": true,
+  "description": "Transport/input validation (Zod) shared by the API and clients. Domain invariants live in @runner-os/core, not here.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  }
+}

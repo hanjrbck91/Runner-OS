@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.next/
+coverage/
+test-results/
+playwright-report/
+apps/web/e2e/.auth/
+next-env.d.ts
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+.vercel/
