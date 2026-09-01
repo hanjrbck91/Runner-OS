@@ -139,3 +139,26 @@ tier works for a single user. Never commit these values.
 5. In Neon, confirm rows in `daily_logs`, `plan_versions`, and `audit_log`
    (field-level entries) for your user id.
 6. Install the PWA (Add to Home Screen) and re-open.
+
+---
+
+# M07 addendum — Google OAuth (second sign-in option)
+
+Magic-link stays; Google is added. Both pass the AUTH_ALLOWED_EMAIL allowlist.
+
+## Google Cloud setup (PM)
+1. Google Cloud Console → APIs & Services → **OAuth consent screen**: External, app name "Runner OS", add your email as a test user (or publish).
+2. **Credentials → Create credentials → OAuth client ID → type: Web application**.
+3. **Authorized redirect URIs** (add both):
+   - `https://<your-vercel-domain>/api/auth/callback/google`
+   - `http://localhost:3000/api/auth/callback/google` (local dev)
+4. Copy the **Client ID** and **Client secret**.
+
+## Vercel env (PM)
+Add to Production (and Preview): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+`GOOGLE_CLIENT_SECRET` is a secret — server-side only, never commit. Redeploy.
+
+## Verify
+Open `/signin` → **CONTINUE WITH GOOGLE** → Google consent → returns to `/today`.
+An allowlisted Google email signs in; any other Google account is denied
+(allowlist). `AUTH_ALLOWED_EMAIL` still governs access.
