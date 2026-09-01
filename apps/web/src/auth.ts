@@ -17,10 +17,12 @@
  */
 import NextAuth from 'next-auth';
 import Nodemailer from 'next-auth/providers/nodemailer';
+import Google from 'next-auth/providers/google';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import nodemailerLib from 'nodemailer';
 import { getAuthDb } from './runtime.js';
 import { authSchema } from './auth-schema.js';
+import { isAllowedEmail } from './server/authz.js';
 
 /**
  * Parse EMAIL_SERVER into a transport config, deriving `secure` from the port
@@ -74,10 +76,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   secret: process.env.AUTH_SECRET,
   pages: { signIn: '/signin' },
-  providers: [emailProvider],
+  // Two ways in, one identity model: Google OAuth and the magic-link email.
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    emailProvider,
+  ],
   callbacks: {
+    // Single allowlist for BOTH providers — a successful Google login is still
+    // rejected unless the email matches AUTH_ALLOWED_EMAIL.
     signIn({ user }) {
-      return !!user?.email && user.email === process.env.AUTH_ALLOWED_EMAIL;
+      return isAllowedEmail(user?.email, process.env.AUTH_ALLOWED_EMAIL);
     },
   },
 });

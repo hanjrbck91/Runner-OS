@@ -25,6 +25,10 @@ export default function SignInPage() {
       <div className="screen">
         <div className="panel">
           <h1>SIGN IN</h1>
+          <button className="primary" data-provider="google" onClick={() => signIn('google', { redirectTo: '/today' })}>
+            CONTINUE WITH GOOGLE
+          </button>
+          <div className="muted center" style={{ margin: '12px 0' }}>— or —</div>
           {sent ? (
             <div className="msg ok">CHECK YOUR EMAIL for a one-time sign-in link.</div>
           ) : (
@@ -32,7 +36,7 @@ export default function SignInPage() {
               <label>EMAIL</label>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} data-field="email" />
               <div style={{ marginTop: 12 }}>
-                <button className="primary" type="submit" disabled={busy}>{busy ? 'SENDING…' : 'SEND MAGIC LINK'}</button>
+                <button type="submit" disabled={busy}>{busy ? 'SENDING…' : 'SEND MAGIC LINK'}</button>
               </div>
             </form>
           )}
