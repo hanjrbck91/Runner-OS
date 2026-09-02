@@ -83,12 +83,38 @@ async function req<T>(input: string, init?: RequestInit): Promise<ApiEnvelope<T>
 
 const post = (url: string, body: unknown) => req(url, { method: 'POST', body: JSON.stringify(body) });
 
+/**
+ * Tiny in-memory resource cache (per browser session). Enables
+ * stale-while-revalidate: a page renders cached data instantly on navigation
+ * and refreshes it in the background — no SYNCING flash on repeat visits. The
+ * server stays authoritative (every mount still revalidates); a save
+ * invalidates the affected keys so nothing goes stale.
+ */
+const cache = new Map<string, unknown>();
+export const resourceCache = {
+  get: <T>(k: string): T | undefined => cache.get(k) as T | undefined,
+  set: (k: string, v: unknown): void => { cache.set(k, v); },
+  invalidate: (...keys: string[]): void => { for (const k of keys) cache.delete(k); },
+};
+
+async function cached<T>(key: string, p: Promise<ApiEnvelope<T>>): Promise<ApiEnvelope<T>> {
+  const r = await p;
+  if (r.ok) resourceCache.set(key, r.data);
+  return r;
+}
+// A mutation invalidates derived/authoritative reads so the next fetch is fresh.
+async function afterSave(p: Promise<ApiEnvelope<DailyView>>): Promise<ApiEnvelope<DailyView>> {
+  const r = await p;
+  if (r.ok) resourceCache.invalidate('today', 'weekly');
+  return r;
+}
+
 export const api = {
-  today: () => req<TodayView>('/api/today'),
-  weekly: () => req<WeeklyView>('/api/weekly'),
-  plan: (date?: string) => req<PlanView>(`/api/plan${date ? `?date=${encodeURIComponent(date)}` : ''}`),
-  saveWeight: (body: { weight?: number | null; sleep?: number | null }) => post('/api/log/weight', body) as Promise<ApiEnvelope<DailyView>>,
-  saveRun: (body: { km?: number | null; rpe?: number | null; pain?: number | null; note?: string | null }) => post('/api/log/run', body) as Promise<ApiEnvelope<DailyView>>,
-  saveGym: (body: { completed?: boolean | null }) => post('/api/log/gym', body) as Promise<ApiEnvelope<DailyView>>,
-  saveNote: (body: { note?: string | null }) => post('/api/log/note', body) as Promise<ApiEnvelope<DailyView>>,
+  today: () => cached<TodayView>('today', req<TodayView>('/api/today')),
+  weekly: () => cached<WeeklyView>('weekly', req<WeeklyView>('/api/weekly')),
+  plan: (date?: string) => cached<PlanView>('plan', req<PlanView>(`/api/plan${date ? `?date=${encodeURIComponent(date)}` : ''}`)),
+  saveWeight: (body: { weight?: number | null; sleep?: number | null }) => afterSave(post('/api/log/weight', body) as Promise<ApiEnvelope<DailyView>>),
+  saveRun: (body: { km?: number | null; rpe?: number | null; pain?: number | null; note?: string | null }) => afterSave(post('/api/log/run', body) as Promise<ApiEnvelope<DailyView>>),
+  saveGym: (body: { completed?: boolean | null }) => afterSave(post('/api/log/gym', body) as Promise<ApiEnvelope<DailyView>>),
+  saveNote: (body: { note?: string | null }) => afterSave(post('/api/log/note', body) as Promise<ApiEnvelope<DailyView>>),
 };

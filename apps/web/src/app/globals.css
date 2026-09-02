@@ -53,6 +53,7 @@ button:disabled { opacity: .5; cursor: default; }
 .seg button.sel { background: var(--accent); color: #10140c; border-color: var(--accent); }
 .toggle { display: flex; gap: 8px; }
 .toggle button { flex: 1; }
+.toggle button.sel { background: var(--accent); color: #10140c; border-color: var(--accent); font-weight: bold; }
 .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
 .tabs a { flex: 1; }
 .tabs button { padding: 12px 4px; }

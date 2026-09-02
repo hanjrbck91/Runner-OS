@@ -7,7 +7,7 @@ import { Loading, ErrorBanner, KV, Panel } from '../../../components/ui.js';
 
 export default function WeekPage() {
   const loader = useCallback(() => api.weekly(), []);
-  const w = useResource(loader);
+  const w = useResource(loader, 'weekly');
   if (w.status === 'loading') return <Loading label="CALC" />;
   if (w.status === 'error') return <ErrorBanner error={w.error} onRetry={w.reload} />;
   const d = w.data!;

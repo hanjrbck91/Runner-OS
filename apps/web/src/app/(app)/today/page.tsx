@@ -30,7 +30,7 @@ function Logged({ daily }: { daily: DailyView | null }) {
 
 export default function TodayPage() {
   const loader = useCallback(() => api.today(), []);
-  const t = useResource(loader);
+  const t = useResource(loader, 'today');
 
   if (t.status === 'loading') return <Loading label="SYNCING" />;
   if (t.status === 'error') return <ErrorBanner error={t.error} onRetry={t.reload} />;

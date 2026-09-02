@@ -1,18 +1,25 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApiEnvelope, AppError } from './api.js';
+import { resourceCache, type ApiEnvelope, type AppError } from './api.js';
 
 type State<T> = { status: 'loading' | 'ready' | 'error'; data?: T; error?: AppError };
 
-/** Load a resource once; expose reload. IDLE/LOADING/READY/ERROR states. */
-export function useResource<T>(loader: () => Promise<ApiEnvelope<T>>) {
-  const [state, setState] = useState<State<T>>({ status: 'loading' });
+/**
+ * Load a resource; expose reload. When `cacheKey` is given, seeds from the
+ * session cache so navigation renders instantly and revalidates silently in the
+ * background (no SYNCING flash on repeat visits). First load / no-cache still
+ * shows a genuine loading state, and loading always terminates.
+ */
+export function useResource<T>(loader: () => Promise<ApiEnvelope<T>>, cacheKey?: string) {
+  const seed = cacheKey ? resourceCache.get<T>(cacheKey) : undefined;
+  const [state, setState] = useState<State<T>>(seed !== undefined ? { status: 'ready', data: seed } : { status: 'loading' });
   const load = useCallback(async () => {
-    setState({ status: 'loading' });
+    const had = cacheKey ? resourceCache.get<T>(cacheKey) !== undefined : false;
+    if (!had) setState({ status: 'loading' });   // only block UI when nothing to show
     const r = await loader();
     if (r.ok) setState({ status: 'ready', data: r.data });
-    else setState({ status: 'error', error: r.error });
-  }, [loader]);
+    else if (!had) setState({ status: 'error', error: r.error }); // keep cached data on revalidate error
+  }, [loader, cacheKey]);
   useEffect(() => { void load(); }, [load]);
   return { ...state, reload: load };
 }

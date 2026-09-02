@@ -10,7 +10,7 @@ const TABS: Tab[] = ['weight', 'run', 'gym', 'note'];
 
 export default function LogPage() {
   const loader = useCallback(() => api.today(), []);
-  const t = useResource(loader);
+  const t = useResource(loader, 'today');
   const [tab, setTab] = useState<Tab>('weight');
 
   if (t.status === 'loading') return <Loading label="SYNCING" />;

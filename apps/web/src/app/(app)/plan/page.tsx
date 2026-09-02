@@ -6,7 +6,7 @@ import { Loading, ErrorBanner, KV, Panel } from '../../../components/ui.js';
 
 export default function PlanPage() {
   const loader = useCallback(() => api.plan(), []); // today's authoritative plan (read-only)
-  const p = useResource(loader);
+  const p = useResource(loader, 'plan');
   if (p.status === 'loading') return <Loading label="RESOLVING" />;
   if (p.status === 'error') {
     if (p.error?.code === 'NOT_FOUND') {

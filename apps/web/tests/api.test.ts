@@ -70,6 +70,18 @@ describe('M07-D — API handlers', () => {
     expect(body(await H.today(env, { session: valid })).data.daily.gymDone).toBe(true);
   });
 
+  it('T7b gym OFF (false) persists on a NEW day (not treated as no-value)', async () => {
+    const s = await H.saveGym(env, { session: valid, body: { completed: false } });
+    expect(s.status).toBe(200);
+    expect(body(await H.today(env, { session: valid })).data.daily.gymDone).toBe(false);
+  });
+
+  it('T7c weekly reflects gym completion', async () => {
+    await H.saveGym(env, { session: valid, body: { completed: true } });
+    const w = await H.weekly(env, { session: valid });
+    expect(body(w).data.numberOfGymSessions).toBe(1);
+  });
+
   it('T8 note save', async () => {
     const s = await H.saveNote(env, { session: valid, body: { note: 'felt strong' } });
     expect(s.status).toBe(200);
