@@ -16,7 +16,11 @@ export class TodayService {
     const d = date ?? localDateInTimezone(this.deps.clock.now(), this.deps.clock.timezone());
     if (!isValidLocalDate(d)) return fail('BAD_DATE', 'date must be YYYY-MM-DD', { date });
 
-    const versions = await this.deps.plans.listByPlanDate(ctx.userId, d);
+    // Plan + Daily are independent reads — run them in parallel.
+    const [versions, daily] = await Promise.all([
+      this.deps.plans.listByPlanDate(ctx.userId, d),
+      this.deps.daily.getActiveByDate(ctx.userId, d),
+    ]);
     const res = resolvePlanForDate(versions, d);
     let planStatus: PlanStatus;
     let plan = null;
@@ -24,7 +28,6 @@ export class TodayService {
     else if (res.status === 'AMBIGUOUS') planStatus = 'AMBIGUOUS';
     else planStatus = 'NONE';
 
-    const daily = await this.deps.daily.getActiveByDate(ctx.userId, d);
     const { weekStart } = getWeekBounds(d);
 
     return ok({

@@ -40,16 +40,20 @@ export class AggregationService {
     if (!isValidLocalDate(anyDate)) return fail('BAD_DATE', 'date must be YYYY-MM-DD', { date: anyDate });
     const { weekStart, weekEnd } = getWeekBounds(anyDate);
 
-    const daily = await this.deps.daily.listActiveInRange(ctx.userId, weekStart, weekEnd);
+    // Independent reads run in parallel (first-load latency).
+    const [daily, planList, reflection] = await Promise.all([
+      this.deps.daily.listActiveInRange(ctx.userId, weekStart, weekEnd),
+      this.deps.plans.listByPlanDateRange(ctx.userId, weekStart, weekEnd),
+      this.deps.reflections.get(ctx.userId, 'WEEK', weekKey(weekStart)),
+    ]);
     const { byDate, duplicates } = indexDailyByDate(daily);
     if (duplicates.length) return fail('INTEGRITY_DUPLICATE', 'multiple active Daily records for date(s)', { dates: duplicates });
 
-    const planByDate = indexPlansByDate(await this.deps.plans.listByPlanDateRange(ctx.userId, weekStart, weekEnd));
+    const planByDate = indexPlansByDate(planList);
     const comp = computeCompletion(planByDate, byDate, weekStart, weekEnd);
     if (!comp.ok) return fail('PLAN_AMBIGUOUS', `ambiguous authoritative plan for ${comp.date}`, { date: comp.date, planIds: comp.planIds });
 
     const m = computeCoreMetrics(daily);
-    const reflection = await this.deps.reflections.get(ctx.userId, 'WEEK', weekKey(weekStart));
 
     return ok({
       weekId: weekKey(weekStart),

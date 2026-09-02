@@ -162,6 +162,40 @@ describe('M07-D — API handlers', () => {
     expect(body(t).data.daily).toBeNull();
   });
 
+  it('T21 CSV export: unauth 401; authed returns text/csv with stable header', async () => {
+    const un = await H.exportWeek(env, { session: null });
+    expect(un.status).toBe(401);
+    expect(un.csv).toBeUndefined();
+    await H.saveRun(env, { session: valid, body: { km: 8, rpe: 6 } });
+    const ex = await H.exportWeek(env, { session: valid });
+    expect(ex.status).toBe(200);
+    expect(typeof ex.csv).toBe('string');
+    expect(ex.csv!.split('\r\n')[0]).toBe('date,week_number,phase,plan_version,plan_status,planned_session,planned_gym,actual_km,rpe,pain,gym_completed,weight_kg,sleep_hours,nutrition,note,expected_sessions,completed_sessions');
+    expect(ex.csv).toContain('8'); // actual km present
+  });
+
+  it('T22 export contains only the authenticated user\'s data', async () => {
+    await H.saveRun(env, { session: valid, body: { km: 12 } });         // user A
+    const envB: Env = { ...env, allowedEmail: other.email };
+    const ex = await H.exportWeek(envB, { session: other });            // user B
+    expect(ex.status).toBe(200);
+    expect(ex.csv).not.toContain('12'); // none of A's actuals leak into B's export
+  });
+
+  it('T23 note/form-state isolation: each log writes only its own fields', async () => {
+    await H.saveRun(env, { session: valid, body: { km: 8, rpe: 6 } });
+    await H.saveNote(env, { session: valid, body: { note: 'legs heavy' } });
+    let day = body(await H.today(env, { session: valid })).data.daily;
+    expect(day.runActualKm).toBe(8);   // note save did not touch run
+    expect(day.gymDone).toBeNull();    // ...or gym
+    expect(day.noteText).toBe('legs heavy');
+    await H.saveGym(env, { session: valid, body: { completed: true } });
+    day = body(await H.today(env, { session: valid })).data.daily;
+    expect(day.noteText).toBe('legs heavy'); // gym save did not touch note
+    expect(day.runActualKm).toBe(8);          // ...or run
+    expect(day.gymDone).toBe(true);
+  });
+
   it('T17 no DB internals leak; 404 mapping; safe error shape', async () => {
     const r = await H.plan(env, { session: valid, query: { date: '2026-01-15' } });
     expect(r.status).toBe(404);

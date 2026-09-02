@@ -8,6 +8,7 @@
  */
 import {
   createServices, localDateInTimezone, isValidLocalDate,
+  buildWeeklyReport, reportToCsv, weeklyCsvFilename,
   type CoreDependencies, type Result,
 } from '@runner-os/core';
 import {
@@ -110,6 +111,33 @@ export function saveGym(env: Env, req: Req): Promise<ApiResult> {
     if (!p.success) return { ok: false, res: badRequest('VALIDATION', 'invalid payload', { errors: p.error.issues }) };
     return { ok: true, fields: mapPresentFields(body, { completed: 'gymDone' }) };
   });
+}
+
+// ---- GET /api/export?week=YYYY-MM-DD  (Coach CSV; text/csv) ----
+export interface ExportResult {
+  readonly status: number;
+  readonly csv?: string;
+  readonly filename?: string;
+  readonly body?: unknown; // JSON error envelope when csv is absent
+}
+export async function exportWeek(env: Env, req: Req): Promise<ExportResult> {
+  try {
+    const authRes = await authenticate(env, req.session);
+    if (!authRes.ok) return { status: authRes.response.status, body: authRes.response.body };
+    const ctx = authRes.ctx;
+
+    const raw = req.query?.week ?? serverToday(env);
+    if (!LocalDateSchema.safeParse(raw).success || !isValidLocalDate(raw)) {
+      const br = badRequest('BAD_DATE', 'week must be YYYY-MM-DD');
+      return { status: br.status, body: br.body };
+    }
+    const r = await buildWeeklyReport(env.deps, ctx, raw);
+    if (!r.ok) { const ar = fromResult(r); return { status: ar.status, body: ar.body }; }
+    return { status: 200, csv: reportToCsv(r.data), filename: weeklyCsvFilename(r.data) };
+  } catch {
+    const i = internal();
+    return { status: i.status, body: i.body };
+  }
 }
 
 // ---- POST /api/log/note ----
