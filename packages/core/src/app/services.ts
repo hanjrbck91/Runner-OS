@@ -4,12 +4,16 @@ import { DailyService } from './daily-service.js';
 import { PlanService } from './plan-service.js';
 import { AggregationService } from './aggregation-service.js';
 import { TodayService } from './today-service.js';
+import { PlanImportService } from './plan-import-service.js';
+import { PlanOverviewService } from './plan-overview-service.js';
 
 export interface RunnerServices {
   readonly daily: DailyService;
   readonly plans: PlanService;
   readonly aggregation: AggregationService;
   readonly today: TodayService;
+  readonly planImport: PlanImportService;
+  readonly planOverview: PlanOverviewService;
 }
 
 export function createServices(deps: CoreDependencies): RunnerServices {
@@ -18,5 +22,7 @@ export function createServices(deps: CoreDependencies): RunnerServices {
     plans: new PlanService(deps),
     aggregation: new AggregationService(deps),
     today: new TodayService(deps),
+    planImport: new PlanImportService(deps),
+    planOverview: new PlanOverviewService(deps),
   };
 }

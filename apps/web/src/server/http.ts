@@ -24,6 +24,8 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   INTEGRITY_DUPLICATE: 409,
   PLAN_OVERLAP: 409,
   ALREADY_DELETED: 409,
+  IMPORT_INVALID: 400,
+  IMPORT_CONFLICT: 409,
 };
 
 export function fromResult<T>(r: Result<T>): ApiResult {

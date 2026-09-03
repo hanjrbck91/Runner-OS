@@ -66,6 +66,54 @@ export interface WeeklyView {
   reflectionText: string | null;
 }
 
+export interface UpcomingSession {
+  date: string;
+  weekNumber: number | null;
+  phase: string | null;
+  session: string;
+  plannedKm: number | null;
+}
+export interface PlanOverview {
+  hasPlan: boolean;
+  today: string;
+  totalWeeks: number;
+  currentWeek: number | null;
+  currentPhase: string | null;
+  currentWeekPlannedKm: number | null;
+  completedWeeks: number;
+  remainingWeeks: number;
+  startsInDays: number | null;
+  dateRange: { start: string; end: string } | null;
+  upcoming: UpcomingSession[];
+}
+export interface ImportPreviewRow {
+  date: string; weekNumber: number; phase: string; sessionType: string;
+  slot: string; plannedKm: number | null; summary: string;
+}
+export interface ImportPreview {
+  valid: boolean;
+  rowCount: number;
+  dateRange: { start: string; end: string } | null;
+  weekCount: number;
+  totalPlannedKm: number;
+  plannedKmByWeek: { weekNumber: number; phase: string; plannedKm: number; sessions: number }[];
+  phaseDistribution: { phase: string; count: number }[];
+  sessionDistribution: { type: string; count: number }[];
+  planLabel: string | null;
+  errors: { line: number; field: string; message: string }[];
+  warnings: string[];
+  rows: ImportPreviewRow[];
+}
+export interface ImportResult {
+  planLabel: string | null;
+  versionsCreated: number;
+  dateRange: { start: string; end: string };
+  weekCount: number;
+  sessionCount: number;
+  totalPlannedKm: number;
+  effectiveFrom: string;
+}
+
 async function req<T>(input: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
   try {
     const res = await fetch(input, {
@@ -113,6 +161,13 @@ export const api = {
   today: () => cached<TodayView>('today', req<TodayView>('/api/today')),
   weekly: () => cached<WeeklyView>('weekly', req<WeeklyView>('/api/weekly')),
   plan: (date?: string) => cached<PlanView>('plan', req<PlanView>(`/api/plan${date ? `?date=${encodeURIComponent(date)}` : ''}`)),
+  planOverview: () => cached<PlanOverview>('planOverview', req<PlanOverview>('/api/plan/overview')),
+  importPreview: (csv: string) => post('/api/plan/import/preview', { csv }) as Promise<ApiEnvelope<ImportPreview>>,
+  importCommit: async (csv: string) => {
+    const r = (await post('/api/plan/import/commit', { csv })) as ApiEnvelope<ImportResult>;
+    if (r.ok) resourceCache.invalidate('plan', 'planOverview', 'today', 'weekly');
+    return r;
+  },
   saveWeight: (body: { weight?: number | null; sleep?: number | null }) => afterSave(post('/api/log/weight', body) as Promise<ApiEnvelope<DailyView>>),
   saveRun: (body: { km?: number | null; rpe?: number | null; pain?: number | null; note?: string | null }) => afterSave(post('/api/log/run', body) as Promise<ApiEnvelope<DailyView>>),
   saveGym: (body: { completed?: boolean | null }) => afterSave(post('/api/log/gym', body) as Promise<ApiEnvelope<DailyView>>),

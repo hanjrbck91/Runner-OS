@@ -1,0 +1,141 @@
+date,week_number,phase,day,session_type,planned_distance_km,target_pace,target_effort,planned_duration,workout_description,planned_status,plan_version,coach_notes
+2026-09-07,1,Rebuild,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-08,1,Rebuild,Tuesday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-09,1,Rebuild,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-10,1,Rebuild,Thursday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-11,1,Rebuild,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-12,1,Rebuild,Saturday,Easy,6,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-13,1,Rebuild,Sunday,Long,12,,RPE 3-4,,Easy long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-14,2,Rebuild,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-15,2,Rebuild,Tuesday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-16,2,Rebuild,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-17,2,Rebuild,Thursday,Easy + Strides,7,,RPE 3-4,,Easy + relaxed strides,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-18,2,Rebuild,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-19,2,Rebuild,Saturday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-20,2,Rebuild,Sunday,Long,14,,RPE 3-4,,Easy long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-21,3,Rebuild,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-22,3,Rebuild,Tuesday,Easy,8,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-23,3,Rebuild,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-24,3,Rebuild,Thursday,Progression,8,,RPE 4-5,,"Light progression, controlled",planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-25,3,Rebuild,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-26,3,Rebuild,Saturday,Easy,8,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-27,3,Rebuild,Sunday,Long,16,,RPE 3-4,,Easy long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-28,4,Rebuild / Recovery,Monday,Rest,,,,,Recovery + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-29,4,Rebuild / Recovery,Tuesday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-09-30,4,Rebuild / Recovery,Wednesday,Strength,,,,,Light strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-01,4,Rebuild / Recovery,Thursday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-02,4,Rebuild / Recovery,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-03,4,Rebuild / Recovery,Saturday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-04,4,Rebuild / Recovery,Sunday,Long,13,,RPE 3-4,,Recovery long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-05,5,Aerobic Engine,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-06,5,Aerobic Engine,Tuesday,Tempo Introduction,8,,RPE 5-6,,2 km easy + 3 km controlled tempo + easy cooldown,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-07,5,Aerobic Engine,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-08,5,Aerobic Engine,Thursday,Easy,8,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-09,5,Aerobic Engine,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-10,5,Aerobic Engine,Saturday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-11,5,Aerobic Engine,Sunday,Long,17,,RPE 3-4,,Easy long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-12,6,Aerobic Engine,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-13,6,Aerobic Engine,Tuesday,Threshold,9,,RPE 6,,Controlled threshold session,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-14,6,Aerobic Engine,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-15,6,Aerobic Engine,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-16,6,Aerobic Engine,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-17,6,Aerobic Engine,Saturday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-18,6,Aerobic Engine,Sunday,Long,18,,RPE 3-4,,Easy long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-19,7,Aerobic Engine,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-20,7,Aerobic Engine,Tuesday,Tempo / Progression,10,,RPE 5-6,,Tempo/progression; finish controlled,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-21,7,Aerobic Engine,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-22,7,Aerobic Engine,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-23,7,Aerobic Engine,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-24,7,Aerobic Engine,Saturday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-25,7,Aerobic Engine,Sunday,Long,20,,RPE 3-4,,Long aerobic,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-26,8,Aerobic Engine / Cutback,Monday,Rest,,,,,Recovery + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-27,8,Aerobic Engine / Cutback,Tuesday,Easy + Strides,8,,RPE 3-4,,Easy + relaxed strides,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-28,8,Aerobic Engine / Cutback,Wednesday,Strength,,,,,Light strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-29,8,Aerobic Engine / Cutback,Thursday,Easy,8,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-30,8,Aerobic Engine / Cutback,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-10-31,8,Aerobic Engine / Cutback,Saturday,Easy,8,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-01,8,Aerobic Engine / Cutback,Sunday,Long,16,,RPE 3-4,,Cutback long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-02,9,Marathon Builder,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-03,9,Marathon Builder,Tuesday,Threshold,10,,RPE 6,,"Threshold; controlled, not maximal",planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-04,9,Marathon Builder,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-05,9,Marathon Builder,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-06,9,Marathon Builder,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-07,9,Marathon Builder,Saturday,Easy,11,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-08,9,Marathon Builder,Sunday,Long,20,,RPE 3-4,,Long aerobic,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-09,10,Marathon Builder,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-10,10,Marathon Builder,Tuesday,Marathon Effort,11,4:55-5:05/km,RPE 5-6,,Controlled marathon-effort blocks,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-11,10,Marathon Builder,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-12,10,Marathon Builder,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-13,10,Marathon Builder,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-14,10,Marathon Builder,Saturday,Easy,10,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-15,10,Marathon Builder,Sunday,Long,22,,RPE 3-4,,Long aerobic,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-16,11,Marathon Builder,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-17,11,Marathon Builder,Tuesday,Threshold,11,,RPE 6,,Threshold; controlled,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-18,11,Marathon Builder,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-19,11,Marathon Builder,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-20,11,Marathon Builder,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-21,11,Marathon Builder,Saturday,Easy,10,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-22,11,Marathon Builder,Sunday,Long,24,,RPE 3-4,,Long aerobic,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-23,12,Marathon Builder / Cutback,Monday,Rest,,,,,Recovery + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-24,12,Marathon Builder / Cutback,Tuesday,Easy + Strides,8,,RPE 3-4,,Easy + relaxed strides,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-25,12,Marathon Builder / Cutback,Wednesday,Strength,,,,,Light strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-26,12,Marathon Builder / Cutback,Thursday,Easy,8,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-27,12,Marathon Builder / Cutback,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-28,12,Marathon Builder / Cutback,Saturday,Easy,12,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-29,12,Marathon Builder / Cutback,Sunday,Long,18,,RPE 3-4,,Cutback long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-11-30,13,Marathon Builder,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-01,13,Marathon Builder,Tuesday,Marathon Effort,11,4:55-5:05/km,RPE 5-6,,Marathon-effort blocks,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-02,13,Marathon Builder,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-03,13,Marathon Builder,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-04,13,Marathon Builder,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-05,13,Marathon Builder,Saturday,Easy,10,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-06,13,Marathon Builder,Sunday,Long,26,,RPE 4-5,,Marathon-specific long run; majority easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-07,14,Peak Marathon Specificity,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-08,14,Peak Marathon Specificity,Tuesday,Marathon Pace Blocks,12,4:55-5:05/km,RPE 5-6,,MP blocks inside controlled run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-09,14,Peak Marathon Specificity,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-10,14,Peak Marathon Specificity,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-11,14,Peak Marathon Specificity,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-12,14,Peak Marathon Specificity,Saturday,Easy,10,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-13,14,Peak Marathon Specificity,Sunday,Long,27,,RPE 4-5,,Long run with controlled marathon-effort work,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-14,15,Peak Marathon Specificity,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-15,15,Peak Marathon Specificity,Tuesday,Marathon Pace Blocks,12,4:55-5:05/km,RPE 5-6,,Longer MP blocks; controlled,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-16,15,Peak Marathon Specificity,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-17,15,Peak Marathon Specificity,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-18,15,Peak Marathon Specificity,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-19,15,Peak Marathon Specificity,Saturday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-20,15,Peak Marathon Specificity,Sunday,Long,30,,RPE 4-5,,Peak long run; finish controlled,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-21,16,Peak Marathon Specificity,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-22,16,Peak Marathon Specificity,Tuesday,Threshold + MP,11,4:55-5:05/km,RPE 5-6,,Threshold + marathon-effort work,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-23,16,Peak Marathon Specificity,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-24,16,Peak Marathon Specificity,Thursday,Easy,8,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-25,16,Peak Marathon Specificity,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-26,16,Peak Marathon Specificity,Saturday,Easy,10,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-27,16,Peak Marathon Specificity,Sunday,Long,25,,RPE 4-5,,Long aerobic,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-28,17,Peak Marathon Specificity,Monday,Rest,,,,,Rest + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-29,17,Peak Marathon Specificity,Tuesday,Marathon Pace Blocks,12,4:55-5:05/km,RPE 5-6,,Marathon-specific blocks,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-30,17,Peak Marathon Specificity,Wednesday,Strength,,,,,Strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2026-12-31,17,Peak Marathon Specificity,Thursday,Easy,9,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-01,17,Peak Marathon Specificity,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-02,17,Peak Marathon Specificity,Saturday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-03,17,Peak Marathon Specificity,Sunday,Long,32,,RPE 4-5,,10 km easy + 10 km steady + 8 km marathon effort + 2 km easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-04,18,Taper,Monday,Rest,,,,,Taper + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-05,18,Taper,Tuesday,Marathon Pace Blocks,9,4:55-5:05/km,RPE 5-6,,Short marathon-pace blocks,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-06,18,Taper,Wednesday,Strength,,,,,Light strength,strength,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-07,18,Taper,Thursday,Easy,7,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-08,18,Taper,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-09,18,Taper,Saturday,Easy,11,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-10,18,Taper,Sunday,Long,21,,RPE 4,,Taper long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-11,19,Taper,Monday,Rest,,,,,Taper + mobility,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-12,19,Taper,Tuesday,Marathon Pace Blocks,7,4:55-5:05/km,RPE 5-6,,"Short, sharp MP blocks",planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-13,19,Taper,Wednesday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-14,19,Taper,Thursday,Easy,6,,RPE 3-4,,Easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-15,19,Taper,Friday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-16,19,Taper,Saturday,Easy + Strides,6,,RPE 3-4,,Easy + short relaxed strides,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-17,19,Taper,Sunday,Long,15,,RPE 3-4,,Short long run,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-18,20,Race Week,Monday,Race,42.2,4:58/km,RPE 7-8,,Mumbai Marathon — 42.2 km; sub-3:30 is a hypothesis,race,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-19,20,Race Week,Tuesday,Rest,,,,,Recovery,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-20,20,Race Week,Wednesday,Easy,4,,RPE 2-3,,Very easy,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-21,20,Race Week,Thursday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-22,20,Race Week,Friday,Easy + Strides,4,,RPE 2-3,,Very easy + short strides,planned,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-23,20,Race Week,Saturday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.
+2027-01-24,20,Race Week,Sunday,Rest,,,,,Rest,rest,TMM-3:30-v1-constructed,Constructed from supplied 20-week framework; not an original day-by-day prescription from Adriano.

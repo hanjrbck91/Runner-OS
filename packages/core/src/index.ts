@@ -23,7 +23,10 @@ export * from './app/plan-service.js';
 export * from './app/aggregation-service.js';
 export * from './app/today-service.js';
 export * from './app/report-service.js';
+export * from './app/plan-import-service.js';
+export * from './app/plan-overview-service.js';
 export * from './domain/csv.js';
+export * from './domain/plan-csv.js';
 export * from './app/services.js';
 
 // Default adapters (system clock + uuid). In-memory adapters are a subpath:

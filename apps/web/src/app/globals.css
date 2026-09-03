@@ -68,4 +68,23 @@ button:disabled { opacity: .5; cursor: default; }
 .row { display: flex; gap: 8px; }
 .row > * { flex: 1; }
 a { color: var(--accent); }
+/* Plan progress + import (MC-025) */
+.prog { height: 14px; background: var(--field); border: 2px solid var(--line); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+.prog > i { display: block; height: 100%; background: var(--accent); }
+.up { border-bottom: 1px dotted var(--line); padding: 6px 0; display: flex; justify-content: space-between; gap: 8px; }
+.up .d { color: var(--lcd-dim); min-width: 92px; }
+.up .s { color: var(--lcd); text-align: right; flex: 1; }
+.tblwrap { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 3px; margin-top: 8px; }
+table.itbl { border-collapse: collapse; width: 100%; font-size: 12px; }
+table.itbl th, table.itbl td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; white-space: nowrap; }
+table.itbl th { position: sticky; top: 0; background: var(--panel-2); color: var(--lcd-dim); letter-spacing: 1px; }
+table.itbl td.num { text-align: right; }
+.errlist { max-height: 200px; overflow: auto; font-size: 12px; color: var(--err); }
+.errlist div { padding: 2px 0; border-bottom: 1px dotted var(--line); }
+input[type="file"] { font-size: 13px; padding: 8px; }
+.wkbar { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 3px 0; }
+.wkbar .lab { min-width: 74px; color: var(--lcd-dim); }
+.wkbar .track { flex: 1; height: 10px; background: var(--field); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.wkbar .track > i { display: block; height: 100%; background: var(--accent); }
+.wkbar .val { min-width: 52px; text-align: right; color: var(--lcd); }
 @media (min-width: 640px) { .app { border-left: 2px solid var(--line); border-right: 2px solid var(--line); } }

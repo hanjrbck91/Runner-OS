@@ -196,6 +196,56 @@ describe('M07-D — API handlers', () => {
     expect(day.gymDone).toBe(true);
   });
 
+  // ---- MC-025 plan import ----
+  const IMP_HEADER = 'date,week_number,phase,day,session_type,planned_distance_km,target_pace,target_effort,planned_duration,workout_description,planned_status,plan_version,coach_notes';
+  const fut = (n: number): string => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+  const impRow = (date: string, wk: number, phase: string, session: string, km: number | string, status = 'planned'): string =>
+    `${date},${wk},${phase},Monday,${session},${km},,RPE 3-4,,${session},${status},TMM-v1,notes`;
+  const impCsv = (): string => [
+    IMP_HEADER,
+    impRow(fut(3), 1, 'Rebuild', 'Easy', 7),
+    impRow(fut(5), 1, 'Rebuild', 'Strength', '', 'strength'),
+    impRow(fut(7), 1, 'Rebuild', 'Long', 12),
+  ].join('\n') + '\n';
+
+  it('T24 import endpoints require auth (401)', async () => {
+    expect((await H.importPlanPreview(env, { session: null, body: { csv: impCsv() } })).status).toBe(401);
+    expect((await H.importPlanCommit(env, { session: null, body: { csv: impCsv() } })).status).toBe(401);
+    expect((await H.planOverview(env, { session: null })).status).toBe(401);
+  });
+
+  it('T25 valid import: preview then commit creates plan versions; overview reflects it', async () => {
+    const pv = await H.importPlanPreview(env, { session: valid, body: { csv: impCsv() } });
+    expect(pv.status).toBe(200);
+    expect(body(pv).data.valid).toBe(true);
+    const c = await H.importPlanCommit(env, { session: valid, body: { csv: impCsv() } });
+    expect(c.status).toBe(200);
+    expect(body(c).data.versionsCreated).toBe(3);
+    const ov = await H.planOverview(env, { session: valid });
+    expect(ov.status).toBe(200);
+    expect(body(ov).data.hasPlan).toBe(true);
+    expect(body(ov).data.totalWeeks).toBe(1);
+    // Imported plan resolves through the existing /plan handler.
+    const p = await H.plan(env, { session: valid, query: { date: fut(3) } });
+    expect(p.status).toBe(200);
+    expect(body(p).data.runPlan).toContain('Easy');
+  });
+
+  it('T26 malformed import rejected (400) with zero DB writes', async () => {
+    const r = await H.importPlanCommit(env, { session: valid, body: { csv: 'foo,bar\n1,2\n' } });
+    expect(r.status).toBe(400);
+    expect(body(r).error.code).toBe('IMPORT_INVALID');
+    const ov = await H.planOverview(env, { session: valid });
+    expect(body(ov).data.hasPlan).toBe(false); // nothing written
+  });
+
+  it('T27 import is user-scoped (B cannot see A\'s imported plan)', async () => {
+    await H.importPlanCommit(env, { session: valid, body: { csv: impCsv() } });
+    const envB: Env = { ...env, allowedEmail: other.email };
+    const ov = await H.planOverview(envB, { session: other });
+    expect(body(ov).data.hasPlan).toBe(false);
+  });
+
   it('T17 no DB internals leak; 404 mapping; safe error shape', async () => {
     const r = await H.plan(env, { session: valid, query: { date: '2026-01-15' } });
     expect(r.status).toBe(404);

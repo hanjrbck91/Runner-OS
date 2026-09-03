@@ -140,6 +140,43 @@ export async function exportWeek(env: Env, req: Req): Promise<ExportResult> {
   }
 }
 
+// ---- GET /api/plan/overview  (whole-plan projection for the Plan page) ----
+export function planOverview(env: Env, req: Req): Promise<ApiResult> {
+  return guard(env, req.session, async (ctx) => {
+    const svc = createServices(env.deps);
+    return fromResult(await svc.planOverview.getOverview(ctx, serverToday(env)));
+  });
+}
+
+const MAX_CSV_BYTES = 1_000_000; // ~1 MB; a 20-week daily plan is a few KB.
+function readCsvBody(body: unknown): { ok: true; csv: string } | { ok: false; res: ApiResult } {
+  const b = asObject(body);
+  const csv = b['csv'];
+  if (typeof csv !== 'string') return { ok: false, res: badRequest('IMPORT_INVALID', 'body.csv (string) is required') };
+  if (csv.length > MAX_CSV_BYTES) return { ok: false, res: badRequest('IMPORT_INVALID', 'CSV too large') };
+  return { ok: true, csv };
+}
+
+// ---- POST /api/plan/import/preview  (validate only; ZERO writes) ----
+export function importPlanPreview(env: Env, req: Req): Promise<ApiResult> {
+  return guard(env, req.session, async (ctx) => {
+    const parsed = readCsvBody(req.body);
+    if (!parsed.ok) return parsed.res;
+    const svc = createServices(env.deps);
+    return fromResult(await svc.planImport.preview(ctx, parsed.csv));
+  });
+}
+
+// ---- POST /api/plan/import/commit  (validate then write new plan versions) ----
+export function importPlanCommit(env: Env, req: Req): Promise<ApiResult> {
+  return guard(env, req.session, async (ctx) => {
+    const parsed = readCsvBody(req.body);
+    if (!parsed.ok) return parsed.res;
+    const svc = createServices(env.deps);
+    return fromResult(await svc.planImport.commit(ctx, parsed.csv));
+  });
+}
+
 // ---- POST /api/log/note ----
 export function saveNote(env: Env, req: Req): Promise<ApiResult> {
   return saveWithFields(env, req, (body) => {

@@ -50,22 +50,91 @@ RFC-4180 quoting. No secrets or internal ids in the output.
 Endpoint: `GET /api/export?week=YYYY-MM-DD` (defaults to current week), authed,
 returns `text/csv` with `Content-Disposition: attachment`. UI: Week → **EXPORT CSV**.
 
-## Future import contract (Phase 8 — documented, NOT implemented; for MC-025)
+## Plan import (Phase 8 — IMPLEMENTED, MC-025)
 ```
 COACH CSV → UPLOAD → PARSE → VALIDATE → PREVIEW → CONFIRM → NEW PLAN VERSION → FUTURE PLAN ONLY
 ```
-Rules the importer MUST follow (so no DB redesign is needed later):
-1. A coach import creates **new plan versions** via the existing
-   `PlanService.createVersion` (additive, effective-dated). It never updates
-   `daily_logs` and never mutates existing plan versions.
-2. Only **future** plan dates may be changed; `effective_from` must be ≥ today so
-   historical resolution and existing Daily plan snapshots are untouched.
-3. Import is **preview-then-confirm**: parse + validate against the domain rules
-   (dates, ratified scales, effective-period ordering) and show a diff before
-   writing. Reject ambiguous/overlapping active periods (existing `PLAN_OVERLAP`).
-4. Suggested import columns: `plan_date, week_number, phase, run_plan,
-   long_run_plan, quality_plan, gym_plan, recovery_plan, mileage_target,
-   milestone, effective_from`. Actuals columns, if present in a coach file, are
-   ignored on import (Runner OS owns actuals).
-5. Every imported version is audited (existing append-only AuditLog).
-No parallel plan model — imports reuse `plan_versions` + `PlanService`.
+Runner OS ingests a coach's **daily-prescription** CSV: one row per calendar day.
+The importer is `PlanImportService` (`packages/core/src/app/plan-import-service.ts`),
+built on the pure parser/mapper `packages/core/src/domain/plan-csv.ts`. It reuses
+the EXISTING plan model — no second plan table, no schema change.
+
+### CSV import format (the input contract)
+Header (exact names; no extra/unknown columns allowed):
+```
+date,week_number,phase,day,session_type,planned_distance_km,target_pace,
+target_effort,planned_duration,workout_description,planned_status,plan_version,coach_notes
+```
+- **Required per row:** `date` (YYYY-MM-DD), `week_number` (integer 1..20),
+  `phase` (non-empty), `session_type` (non-empty).
+- `planned_distance_km` — number ≥ 0 when present (blank = no distance).
+- `planned_status` — one of `planned`/`rest`/`strength`/`race` when present.
+- `day, target_pace, target_effort, planned_duration, workout_description,
+  plan_version, coach_notes` — descriptive; carried into the readable session
+  summary. `plan_version` is surfaced as the plan label (it is NOT the DB version
+  integer — see versioning below).
+
+### session_type → plan slot mapping (deterministic)
+Each day is placed in exactly ONE plan slot so the ratified completion model
+stays intact (`runPlan|longRunPlan|qualityPlan` collectively = one expected run;
+`gymPlan` = one expected gym; recovery not tracked):
+| session_type contains | slot | tracked? |
+|---|---|---|
+| `long` | `longRunPlan` | run |
+| `strength` / `gym` | `gymPlan` | gym |
+| `rest` / `off` / `recovery` | `recoveryPlan` | no |
+| `tempo`/`threshold`/`progression`/`marathon`/`pace`/`interval`/`fartlek`/`race`/`effort` | `qualityPlan` | run |
+| anything else (Easy, Easy + Strides…) | `runPlan` | run |
+`planned_distance_km` → `mileageTarget`. A `race` day's `workout_description`
+becomes the `milestone`.
+
+### Upload → validate → preview → confirm
+1. **Upload** — Plan page → **IMPORT PLAN** → choose a `.csv`. The browser reads
+   the file to text and POSTs it to `/api/plan/import/preview`.
+2. **Validate** (read-only, server-side, ZERO writes): header contract, required
+   columns, date format, week 1..20, numeric distance, planned_status set,
+   duplicate dates in-file, future-only (see below), and existing-active-plan
+   conflicts. All row errors are returned together, human-readable.
+3. **Preview** — row count, date range, week count, planned mileage by week,
+   phase & session distribution, validation status, errors/warnings, and the full
+   row table. The user must explicitly press **CONFIRM IMPORT**.
+4. **Confirm** — `/api/plan/import/commit` re-runs the full validation, then
+   writes one new plan version per day via `PlanService.createVersion` (additive,
+   effective-dated, audited). Result: `PLAN IMPORTED` + version/label/range/weeks/
+   sessions/planned-km/effective-date. The Plan page then shows CURRENT WEEK / 20,
+   phase, this week's planned KM, completed/remaining weeks and upcoming sessions
+   (via `/api/plan/overview`, `PlanOverviewService`).
+
+### Future-plan-only rule (safety)
+Every `plan_date` must be **≥ today** (server clock, Asia/Kolkata). Any past date
+fails validation, so an import can never rewrite historical actuals or historical
+plan versions. `daily_logs` is never written by the importer.
+
+### Plan versioning behavior
+Each imported day is a `plan_versions` row with `effective_from = plan_date` and a
+per-date integer `version` (fresh dates start at v1). A day resolves only for its
+own date via `resolvePlanForDate`. The coach's `plan_version` string is stored as
+the human plan **label** (import result + audit reason), not the DB version.
+
+### Idempotency / duplicate protection
+If any date in the file already has an **active** plan version, the import is
+**rejected** with an explicit conflict list — it never silently duplicates. A
+genuine re-plan is a deliberate future action, not a repeated upload of the same
+file.
+
+### Security
+Authentication required on all three endpoints; `userId` is derived server-side
+from the session (never from the CSV); imported data is user-scoped; no secrets
+reach the client; CSV content is treated as untrusted input and fully validated
+before any write. Every imported version is audited (append-only AuditLog).
+
+### How a coach prepares a CSV for Runner OS
+- One row per day of the plan, dates ascending, all in the future.
+- Use the exact header above; do not add columns.
+- Put the day's main work in `session_type` (+ optional `planned_distance_km`,
+  `target_pace`, `target_effort`, `workout_description`).
+- Rest days: `session_type = Rest`, `planned_status = rest`, distance blank.
+- Race day: `session_type = Race`, put the event name in `workout_description`.
+- Keep `week_number` in 1..20 and consistent within each week.
+Reference file: `docs/TMM_3_30_20_Week_Daily_Prescription_Adriano_Constructed.csv`
+(the constructed 20-week TMM 3:30 plan; 140 rows).

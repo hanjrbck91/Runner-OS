@@ -19,7 +19,9 @@ export type ErrorCode =
   | 'ALREADY_DELETED'
   | 'INTEGRITY_DUPLICATE'
   | 'NO_FIELDS'
-  | 'BAD_MONTH';
+  | 'BAD_MONTH'
+  | 'IMPORT_INVALID'
+  | 'IMPORT_CONFLICT';
 
 export interface AppError {
   readonly code: ErrorCode;
