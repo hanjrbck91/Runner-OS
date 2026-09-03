@@ -22,7 +22,11 @@ export const NutritionSchema = z.enum(['ON', 'MOST', 'OFF']);
 const NumberLike = z.union([z.number(), z.string(), z.null()]);
 
 export const WeightLogSchema = z
-  .object({ weight: NumberLike.optional(), sleep: NumberLike.optional() })
+  .object({
+    weight: NumberLike.optional(),
+    sleep: NumberLike.optional(),
+    nutrition: z.union([NutritionSchema, z.null()]).optional(),
+  })
   .strict();
 
 export const RunLogSchema = z
@@ -30,6 +34,7 @@ export const RunLogSchema = z
     km: NumberLike.optional(),
     rpe: NumberLike.optional(),
     pain: NumberLike.optional(),
+    painLocation: z.union([z.string(), z.null()]).optional(),
     note: z.union([z.string(), z.null()]).optional(),
   })
   .strict();

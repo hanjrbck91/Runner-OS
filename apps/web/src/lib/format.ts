@@ -1,6 +1,30 @@
 /** Display formatting only — no calculations. The API is authoritative. */
 export const dash = '—';
 
+const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;
+const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as const;
+
+/** '2026-09-08' -> 'TUE 08 SEP' (athlete-facing). Invalid input passes through. */
+export function fmtDate(iso: string | null | undefined): string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso ?? dash;
+  const d = new Date(iso + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${DOW[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, '0')} ${MON[d.getUTCMonth()]}`;
+}
+
+/** '2026-09-08' -> '08 SEP' (no weekday; for compact ranges). */
+export function fmtShort(iso: string | null | undefined): string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso ?? dash;
+  const d = new Date(iso + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${String(d.getUTCDate()).padStart(2, '0')} ${MON[d.getUTCMonth()]}`;
+}
+
+/** '2026-09-07'..'2026-09-13' -> '07 SEP → 13 SEP'. */
+export function fmtRange(start: string | null | undefined, end: string | null | undefined): string {
+  return `${fmtShort(start)} → ${fmtShort(end)}`;
+}
+
 export function show(v: number | string | null | undefined, unit = ''): string {
   if (v === null || v === undefined || v === '') return dash;
   return unit ? `${v} ${unit}` : String(v);

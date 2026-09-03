@@ -12,17 +12,31 @@ function PlanLine({ k, v }: { k: string; v: string | null }) {
 }
 
 function Logged({ daily }: { daily: DailyView | null }) {
-  if (!daily) return <div className="muted">Nothing logged yet.</div>;
+  const empty = !daily || (daily.weight == null && daily.sleepHours == null && daily.runActualKm == null
+    && daily.gymDone == null && daily.painScore == null && !daily.noteText && !daily.nutritionAdherence);
+  if (empty) return <div className="muted">Nothing logged yet.</div>;
+  const d = daily!;
+  const hasActual = d.runActualKm != null || d.gymDone != null;
+  const hasResponse = d.runRpe != null || d.painScore != null || d.weight != null || d.sleepHours != null || !!d.nutritionAdherence || !!d.noteText;
   return (
     <>
-      {daily.weight != null && <KV k="WEIGHT" v={show(daily.weight, 'KG')} />}
-      {daily.sleepHours != null && <KV k="SLEEP" v={show(daily.sleepHours, 'H')} />}
-      {daily.runActualKm != null && <KV k="RUN" v={`${daily.runActualKm} KM${daily.runRpe != null ? ` · RPE ${daily.runRpe}` : ''}`} />}
-      {daily.painScore != null && <KV k="PAIN" v={String(daily.painScore)} />}
-      {daily.gymDone != null && <KV k="GYM" v={daily.gymDone ? '✓' : '—'} />}
-      {daily.noteText ? <KV k="NOTE" v={daily.noteText} /> : null}
-      {daily.weight == null && daily.runActualKm == null && daily.gymDone == null && !daily.noteText ? (
-        <div className="muted">Nothing logged yet.</div>
+      {hasActual ? (
+        <>
+          <div className="tagrow"><span className="tag tag-actual">ACTUAL</span></div>
+          {d.runActualKm != null && <KV k="RUN" v={show(d.runActualKm, 'KM')} />}
+          {d.gymDone != null && <KV k="GYM" v={d.gymDone ? '✓ DONE' : '— SKIPPED'} />}
+        </>
+      ) : null}
+      {hasResponse ? (
+        <>
+          <div className="tagrow" style={{ marginTop: 8 }}><span className="tag tag-response">RESPONSE</span></div>
+          {d.runRpe != null && <KV k="RPE" v={String(d.runRpe)} />}
+          {d.painScore != null && <KV k="PAIN" v={d.painScore > 0 && d.painLocation ? `${d.painScore} · ${d.painLocation}` : String(d.painScore)} />}
+          {d.weight != null && <KV k="WEIGHT" v={show(d.weight, 'KG')} />}
+          {d.sleepHours != null && <KV k="SLEEP" v={show(d.sleepHours, 'H')} />}
+          {d.nutritionAdherence ? <KV k="NUTRITION" v={d.nutritionAdherence} /> : null}
+          {d.noteText ? <KV k="NOTE" v={d.noteText} /> : null}
+        </>
       ) : null}
     </>
   );
@@ -47,6 +61,7 @@ export default function TodayPage() {
       </Panel>
 
       <Panel title="TODAY'S PLAN">
+        <div className="tagrow" style={{ marginBottom: 6 }}><span className="tag tag-planned">PLANNED</span><span className="muted">coach</span></div>
         {d.planStatus === 'FOUND' && d.plan ? (
           <>
             <PlanLine k="RUN" v={d.plan.runPlan} />

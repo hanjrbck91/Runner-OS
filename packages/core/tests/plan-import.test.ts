@@ -194,6 +194,21 @@ describe('MC-025 — plan import', () => {
     expect(ov.currentWeek).toBe(1);
     expect(ov.currentPhase).toBe('Rebuild');
     expect(ov.currentWeekPlannedKm).toBe(19);
+    // MC-028: per-week breakdown with nested sessions + planned total.
+    expect(ov.weeks.length).toBe(1);
+    expect(ov.weeks[0]!.weekNumber).toBe(1);
+    expect(ov.weeks[0]!.days.length).toBe(4);
+    expect(ov.weeks[0]!.status).toBe('CURRENT');
+    expect(ov.plannedTotalKm).toBe(19);
+  });
+
+  it('overview completion % is meaningful once the plan has started (MC-028)', async () => {
+    await unwrap(svc.planImport.commit(ctx, good));
+    // Log an actual run on the planned easy day, then read overview as of that day.
+    await unwrap(svc.daily.save(ctx, { date: '2026-09-08', fields: { runActualKm: 7 } }));
+    const ov = await unwrap(svc.planOverview.getOverview(ctx, '2026-09-08'));
+    expect(ov.completedKm).toBe(7);
+    expect(ov.completionPercentage).not.toBeNull();
   });
 
   it('accepts the real 20-week TMM 3:30 constructed CSV (contract check)', async () => {

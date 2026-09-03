@@ -30,6 +30,7 @@ export interface DailyView {
   weight: number | null;
   sleepHours: number | null;
   painScore: number | null;
+  painLocation: string | null;
   runActualKm: number | null;
   runRpe: number | null;
   gymDone: boolean | null;
@@ -73,6 +74,17 @@ export interface UpcomingSession {
   session: string;
   plannedKm: number | null;
 }
+export interface PlanDay { date: string; slot: string; session: string; plannedKm: number | null; }
+export interface PlanWeek {
+  weekNumber: number;
+  phase: string | null;
+  start: string;
+  end: string;
+  plannedKm: number;
+  sessions: number;
+  status: 'DONE' | 'CURRENT' | 'UPCOMING';
+  days: PlanDay[];
+}
 export interface PlanOverview {
   hasPlan: boolean;
   today: string;
@@ -80,11 +92,15 @@ export interface PlanOverview {
   currentWeek: number | null;
   currentPhase: string | null;
   currentWeekPlannedKm: number | null;
+  plannedTotalKm: number;
+  completedKm: number;
+  completionPercentage: number | null;
   completedWeeks: number;
   remainingWeeks: number;
   startsInDays: number | null;
   dateRange: { start: string; end: string } | null;
   upcoming: UpcomingSession[];
+  weeks: PlanWeek[];
 }
 export interface ImportPreviewRow {
   date: string; weekNumber: number; phase: string; sessionType: string;
@@ -169,8 +185,8 @@ export const api = {
     if (r.ok) resourceCache.invalidate('plan', 'planOverview', 'today', 'weekly');
     return r;
   },
-  saveWeight: (body: { weight?: number | null; sleep?: number | null }) => afterSave(post('/api/log/weight', body) as Promise<ApiEnvelope<DailyView>>),
-  saveRun: (body: { km?: number | null; rpe?: number | null; pain?: number | null; note?: string | null }) => afterSave(post('/api/log/run', body) as Promise<ApiEnvelope<DailyView>>),
+  saveWeight: (body: { weight?: number | null; sleep?: number | null; nutrition?: 'ON' | 'MOST' | 'OFF' | null }) => afterSave(post('/api/log/weight', body) as Promise<ApiEnvelope<DailyView>>),
+  saveRun: (body: { km?: number | null; rpe?: number | null; pain?: number | null; painLocation?: string | null; note?: string | null }) => afterSave(post('/api/log/run', body) as Promise<ApiEnvelope<DailyView>>),
   saveGym: (body: { completed?: boolean | null }) => afterSave(post('/api/log/gym', body) as Promise<ApiEnvelope<DailyView>>),
   saveNote: (body: { note?: string | null }) => afterSave(post('/api/log/note', body) as Promise<ApiEnvelope<DailyView>>),
 };

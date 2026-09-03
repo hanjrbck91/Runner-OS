@@ -89,4 +89,22 @@ input[type="file"] { font-size: 13px; padding: 8px; }
 .wkbar .track { flex: 1; height: 10px; background: var(--field); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
 .wkbar .track > i { display: block; height: 100%; background: var(--accent); }
 .wkbar .val { min-width: 52px; text-align: right; color: var(--lcd); }
+/* 20-week expandable list */
+details.wk { border-bottom: 1px solid var(--line); }
+details.wk > summary { display: flex; gap: 8px; align-items: center; padding: 8px 0; cursor: pointer; list-style: none; }
+details.wk > summary::-webkit-details-marker { display: none; }
+details.wk > summary::before { content: '▸'; color: var(--lcd-dim); }
+details.wk[open] > summary::before { content: '▾'; }
+details.wk .wk-h { color: var(--accent); min-width: 64px; letter-spacing: 1px; }
+details.wk .wk-ph { flex: 1; color: var(--lcd-dim); font-size: 13px; }
+details.wk .wk-km { color: var(--lcd); }
+details.wk-current > summary .wk-h { font-weight: bold; }
+details.wk > div .up:last-child { border-bottom: none; }
+/* Planned / Actual / Response tags + locked note */
+.tagrow { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.tag { font-size: 11px; letter-spacing: 2px; padding: 2px 8px; border-radius: 3px; border: 1px solid var(--line); }
+.tag-planned { color: var(--lcd-dim); border-color: var(--lcd-dim); }
+.tag-actual { color: var(--accent); border-color: var(--accent); }
+.tag-response { color: var(--lcd); border-color: var(--line); }
+.locked { white-space: pre-wrap; background: var(--field); border: 2px solid var(--line); border-radius: 3px; padding: 12px; }
 @media (min-width: 640px) { .app { border-left: 2px solid var(--line); border-right: 2px solid var(--line); } }

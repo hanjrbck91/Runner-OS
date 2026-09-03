@@ -101,7 +101,7 @@ export function saveWeight(env: Env, req: Req): Promise<ApiResult> {
   return saveWithFields(env, req, (body) => {
     const p = WeightLogSchema.safeParse(body);
     if (!p.success) return { ok: false, res: badRequest('VALIDATION', 'invalid payload', { errors: p.error.issues }) };
-    return { ok: true, fields: mapPresentFields(body, { weight: 'weight', sleep: 'sleepHours' }) };
+    return { ok: true, fields: mapPresentFields(body, { weight: 'weight', sleep: 'sleepHours', nutrition: 'nutritionAdherence' }) };
   });
 }
 
@@ -110,7 +110,7 @@ export function saveRun(env: Env, req: Req): Promise<ApiResult> {
   return saveWithFields(env, req, (body) => {
     const p = RunLogSchema.safeParse(body);
     if (!p.success) return { ok: false, res: badRequest('VALIDATION', 'invalid payload', { errors: p.error.issues }) };
-    return { ok: true, fields: mapPresentFields(body, { km: 'runActualKm', rpe: 'runRpe', pain: 'painScore', note: 'noteText' }) };
+    return { ok: true, fields: mapPresentFields(body, { km: 'runActualKm', rpe: 'runRpe', pain: 'painScore', painLocation: 'painLocation', note: 'noteText' }) };
   });
 }
 

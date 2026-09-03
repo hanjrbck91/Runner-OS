@@ -266,6 +266,19 @@ describe('M07-D — API handlers', () => {
     expect(p.status).toBe(200); // still exactly one active version per date
   });
 
+  it('T29 body nutrition + run pain location persist (MC-028 exposed fields)', async () => {
+    const b = await H.saveWeight(env, { session: valid, body: { weight: 75, nutrition: 'MOST' } });
+    expect(b.status).toBe(200);
+    const r = await H.saveRun(env, { session: valid, body: { km: 8, pain: 2, painLocation: 'left knee' } });
+    expect(r.status).toBe(200);
+    const day = body(await H.today(env, { session: valid })).data.daily;
+    expect(day.nutritionAdherence).toBe('MOST');
+    expect(day.painScore).toBe(2);
+    expect(day.painLocation).toBe('left knee');
+    // Invalid nutrition rejected at transport.
+    expect((await H.saveWeight(env, { session: valid, body: { nutrition: 'SOMETIMES' } })).status).toBe(400);
+  });
+
   it('T17 no DB internals leak; 404 mapping; safe error shape', async () => {
     const r = await H.plan(env, { session: valid, query: { date: '2026-01-15' } });
     expect(r.status).toBe(404);

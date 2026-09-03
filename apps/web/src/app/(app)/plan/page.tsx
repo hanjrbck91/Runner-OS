@@ -1,7 +1,8 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, type ImportPreview, type ImportResult, type PlanOverview } from '../../../lib/api.js';
+import { api, type ImportPreview, type ImportResult, type PlanOverview, type PlanWeek } from '../../../lib/api.js';
 import { useResource } from '../../../lib/useApi.js';
+import { fmtDate, fmtRange } from '../../../lib/format.js';
 import { Loading, ErrorBanner, KV, Panel, Banner } from '../../../components/ui.js';
 
 export default function PlanPage() {
@@ -35,27 +36,62 @@ function Overview({ d }: { d: PlanOverview }) {
     return <Panel title="PLAN"><div className="muted center">NO PLAN IMPORTED YET</div></Panel>;
   }
   const cw = d.currentWeek ?? 0;
-  const pct = d.totalWeeks > 0 ? Math.min(100, Math.round((d.completedWeeks / d.totalWeeks) * 100)) : 0;
+  // Progress along the 20 weeks: completed weeks / total (weeks-based, always meaningful).
+  const weekPct = d.totalWeeks > 0 ? Math.min(100, Math.round((d.completedWeeks / d.totalWeeks) * 100)) : 0;
   return (
     <div>
       <Panel title="PLAN PROGRESS">
         <div className="big">{d.currentWeek !== null ? `WEEK ${cw} / ${d.totalWeeks}` : `STARTS IN ${d.startsInDays ?? '—'}D`}</div>
-        <div className="prog"><i style={{ width: `${pct}%` }} /></div>
+        <div className="prog"><i style={{ width: `${weekPct}%` }} /></div>
+        <div className="muted" style={{ marginBottom: 6 }}>{d.completedWeeks} of {d.totalWeeks} weeks done</div>
         <KV k="PHASE" v={d.currentPhase ?? '—'} />
         <KV k="THIS WEEK KM" v={d.currentWeekPlannedKm !== null ? `${d.currentWeekPlannedKm} KM` : '—'} />
+        <KV k="PLANNED KM" v={`${d.plannedTotalKm} KM`} />
+        {d.completionPercentage !== null ? (
+          <>
+            <KV k="COMPLETED KM" v={`${d.completedKm} KM`} />
+            <KV k="COMPLETION" v={`${d.completionPercentage}%`} />
+          </>
+        ) : null}
         <KV k="COMPLETED" v={`${d.completedWeeks} WK`} />
         <KV k="REMAINING" v={`${d.remainingWeeks} WK`} />
-        {d.dateRange ? <KV k="RANGE" v={`${d.dateRange.start} → ${d.dateRange.end}`} /> : null}
+        {d.dateRange ? <KV k="RANGE" v={fmtRange(d.dateRange.start, d.dateRange.end)} /> : null}
       </Panel>
+
       <Panel title="UPCOMING">
         {d.upcoming.length === 0 ? <div className="muted">No upcoming sessions.</div> : d.upcoming.map((u) => (
           <div className="up" key={u.date}>
-            <span className="d">{u.date}{u.weekNumber ? ` · W${u.weekNumber}` : ''}</span>
+            <span className="d">{fmtDate(u.date)}{u.weekNumber ? ` · W${u.weekNumber}` : ''}</span>
             <span className="s">{u.session}{u.plannedKm !== null ? ` (${u.plannedKm}km)` : ''}</span>
           </div>
         ))}
       </Panel>
+
+      <Panel title="20-WEEK PLAN">
+        <div className="muted" style={{ marginBottom: 8 }}>Tap a week to see its sessions.</div>
+        {d.weeks.map((w) => <WeekRow key={w.weekNumber} w={w} />)}
+      </Panel>
     </div>
+  );
+}
+
+function WeekRow({ w }: { w: PlanWeek }) {
+  const tag = w.status === 'CURRENT' ? 'NOW' : w.status === 'DONE' ? '✓' : '';
+  return (
+    <details className={`wk wk-${w.status.toLowerCase()}`} open={w.status === 'CURRENT'}>
+      <summary>
+        <span className="wk-h">W{w.weekNumber}{tag ? ` ${tag}` : ''}</span>
+        <span className="wk-ph">{w.phase ?? '—'}</span>
+        <span className="wk-km">{w.plannedKm}km</span>
+      </summary>
+      <div className="muted" style={{ margin: '4px 0 6px' }}>{fmtRange(w.start, w.end)} · {w.sessions} sessions</div>
+      {w.days.map((day) => (
+        <div className="up" key={day.date}>
+          <span className="d">{fmtDate(day.date)}</span>
+          <span className="s">{day.session}{day.plannedKm !== null ? ` (${day.plannedKm}km)` : ''}</span>
+        </div>
+      ))}
+    </details>
   );
 }
 
