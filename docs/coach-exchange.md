@@ -116,11 +116,21 @@ per-date integer `version` (fresh dates start at v1). A day resolves only for it
 own date via `resolvePlanForDate`. The coach's `plan_version` string is stored as
 the human plan **label** (import result + audit reason), not the DB version.
 
-### Idempotency / duplicate protection
-If any date in the file already has an **active** plan version, the import is
-**rejected** with an explicit conflict list — it never silently duplicates. A
-genuine re-plan is a deliberate future action, not a repeated upload of the same
-file.
+### Atomicity
+`commit` runs inside ONE database transaction (`Env.withTransaction`). Either all
+rows land or none — an interrupted request or a mid-batch failure rolls back
+completely, so a partial plan can never persist.
+
+### Idempotency / duplicate protection + REPLACE
+Commit has two modes:
+- **create** (default): if any date already has an **active** plan version, the
+  import is **rejected** (`IMPORT_CONFLICT`) with the conflict list — never a
+  silent duplicate. Preview surfaces these as non-blocking conflicts + a warning.
+- **replace**: an explicit choice (the Plan page shows **REPLACE & IMPORT** when
+  conflicts exist). It hard-deletes the imported dates first
+  (`PlanRepository.deleteByPlanDates`) then rewrites them — recovering cleanly
+  from a prior or partial import with no duplication. Only the imported dates are
+  touched; unrelated plan versions and all Daily actuals are untouched.
 
 ### Security
 Authentication required on all three endpoints; `userId` is derived server-side
