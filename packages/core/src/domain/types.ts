@@ -13,11 +13,22 @@ export interface DailyRecord {
   readonly date: LocalDate;               // server-authoritative
   readonly weight: number | null;
   readonly sleepHours: number | null;
+  readonly sleepQuality: number | null;    // 1..5 (MCV-027)
+  readonly readiness: number | null;       // 1..10
+  readonly stress: number | null;          // 1..10
+  readonly motivation: number | null;      // 1..10
   readonly painScore: number | null;      // 0..3
   readonly painLocation: string | null;
+  readonly painTiming: string | null;      // before/during/after/next-morning (pain > 0 only)
+  readonly runType: string | null;
   readonly runActualKm: number | null;
   readonly runRpe: number | null;         // 1..10
+  readonly runNote: string | null;
   readonly gymDone: boolean | null;
+  readonly gymType: string | null;
+  readonly gymDurationMin: number | null;  // >= 0
+  readonly gymRpe: number | null;          // 1..10
+  readonly gymNote: string | null;
   readonly nutritionAdherence: NutritionAdherence | null;
   readonly noteText: string | null;
   readonly planIdSnapshot: string | null;      // immutable after create

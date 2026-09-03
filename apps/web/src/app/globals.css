@@ -107,4 +107,15 @@ details.wk > div .up:last-child { border-bottom: none; }
 .tag-actual { color: var(--accent); border-color: var(--accent); }
 .tag-response { color: var(--lcd); border-color: var(--line); }
 .locked { white-space: pre-wrap; background: var(--field); border: 2px solid var(--line); border-radius: 3px; padding: 12px; }
+/* Log action console (MCV-027) */
+.logged { display: flex; align-items: center; gap: 8px; color: var(--lcd); font-size: 14px; }
+.saved-tag { margin-top: 6px; color: var(--ok); letter-spacing: 2px; font-size: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.chips button { width: auto; flex: 0 0 auto; padding: 10px 12px; font-size: 13px; }
+.chips button.sel { background: var(--accent); color: #10140c; border-color: var(--accent); font-weight: bold; }
+.rpe { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 4px 0; }
+.rpe button { width: 100%; padding: 12px 0; }
+.rpe button.sel { background: var(--accent); color: #10140c; border-color: var(--accent); font-weight: bold; }
+.seg.wrap { flex-wrap: wrap; }
+.seg.wrap button { min-width: 40px; flex: 0 0 auto; padding: 10px 12px; }
 @media (min-width: 640px) { .app { border-left: 2px solid var(--line); border-right: 2px solid var(--line); } }

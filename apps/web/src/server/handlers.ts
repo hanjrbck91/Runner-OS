@@ -101,7 +101,10 @@ export function saveWeight(env: Env, req: Req): Promise<ApiResult> {
   return saveWithFields(env, req, (body) => {
     const p = WeightLogSchema.safeParse(body);
     if (!p.success) return { ok: false, res: badRequest('VALIDATION', 'invalid payload', { errors: p.error.issues }) };
-    return { ok: true, fields: mapPresentFields(body, { weight: 'weight', sleep: 'sleepHours', nutrition: 'nutritionAdherence' }) };
+    return { ok: true, fields: mapPresentFields(body, {
+      weight: 'weight', sleep: 'sleepHours', nutrition: 'nutritionAdherence',
+      sleepQuality: 'sleepQuality', readiness: 'readiness', stress: 'stress', motivation: 'motivation',
+    }) };
   });
 }
 
@@ -110,7 +113,10 @@ export function saveRun(env: Env, req: Req): Promise<ApiResult> {
   return saveWithFields(env, req, (body) => {
     const p = RunLogSchema.safeParse(body);
     if (!p.success) return { ok: false, res: badRequest('VALIDATION', 'invalid payload', { errors: p.error.issues }) };
-    return { ok: true, fields: mapPresentFields(body, { km: 'runActualKm', rpe: 'runRpe', pain: 'painScore', painLocation: 'painLocation', note: 'noteText' }) };
+    return { ok: true, fields: mapPresentFields(body, {
+      runType: 'runType', km: 'runActualKm', rpe: 'runRpe', pain: 'painScore',
+      painLocation: 'painLocation', painTiming: 'painTiming', note: 'runNote',
+    }) };
   });
 }
 
@@ -119,7 +125,9 @@ export function saveGym(env: Env, req: Req): Promise<ApiResult> {
   return saveWithFields(env, req, (body) => {
     const p = GymLogSchema.safeParse(body);
     if (!p.success) return { ok: false, res: badRequest('VALIDATION', 'invalid payload', { errors: p.error.issues }) };
-    return { ok: true, fields: mapPresentFields(body, { completed: 'gymDone' }) };
+    return { ok: true, fields: mapPresentFields(body, {
+      completed: 'gymDone', gymType: 'gymType', duration: 'gymDurationMin', rpe: 'gymRpe', note: 'gymNote',
+    }) };
   });
 }
 

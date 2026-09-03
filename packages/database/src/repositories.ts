@@ -30,9 +30,12 @@ function b(v: unknown): boolean | null { return v === null || v === undefined ? 
 function mapDaily(r: Row): DailyRecord {
   return {
     id: String(r.id), userId: String(r.user_id), date: String(r.log_date),
-    weight: n(r.weight), sleepHours: n(r.sleep_hours), painScore: n(r.pain_score),
-    painLocation: s(r.pain_location), runActualKm: n(r.run_actual_km), runRpe: n(r.run_rpe),
-    gymDone: b(r.gym_done), nutritionAdherence: s(r.nutrition_adherence) as DailyRecord['nutritionAdherence'],
+    weight: n(r.weight), sleepHours: n(r.sleep_hours),
+    sleepQuality: n(r.sleep_quality), readiness: n(r.readiness), stress: n(r.stress), motivation: n(r.motivation),
+    painScore: n(r.pain_score), painLocation: s(r.pain_location), painTiming: s(r.pain_timing),
+    runType: s(r.run_type), runActualKm: n(r.run_actual_km), runRpe: n(r.run_rpe), runNote: s(r.run_note),
+    gymDone: b(r.gym_done), gymType: s(r.gym_type), gymDurationMin: n(r.gym_duration_min), gymRpe: n(r.gym_rpe), gymNote: s(r.gym_note),
+    nutritionAdherence: s(r.nutrition_adherence) as DailyRecord['nutritionAdherence'],
     noteText: s(r.note_text), planIdSnapshot: s(r.plan_id_snapshot), planVersionSnapshot: n(r.plan_version_snapshot),
     createdAt: toInstant(r.created_at), updatedAt: toInstant(r.updated_at), deletedAt: toInstantOrNull(r.deleted_at),
   };
@@ -65,8 +68,8 @@ export class DailyRepositoryPg implements DailyRepository {
   }
   async createActive(rec: DailyRecord): Promise<{ created: boolean; record: DailyRecord }> {
     const r = await rows(this.db, sql`
-      insert into daily_logs (id,user_id,log_date,weight,sleep_hours,pain_score,pain_location,run_actual_km,run_rpe,gym_done,nutrition_adherence,note_text,plan_id_snapshot,plan_version_snapshot,created_at,updated_at,deleted_at)
-      values (${rec.id},${rec.userId},${rec.date},${rec.weight},${rec.sleepHours},${rec.painScore},${rec.painLocation},${rec.runActualKm},${rec.runRpe},${rec.gymDone},${rec.nutritionAdherence},${rec.noteText},${rec.planIdSnapshot},${rec.planVersionSnapshot},${rec.createdAt},${rec.updatedAt},${rec.deletedAt})
+      insert into daily_logs (id,user_id,log_date,weight,sleep_hours,sleep_quality,readiness,stress,motivation,pain_score,pain_location,pain_timing,run_type,run_actual_km,run_rpe,run_note,gym_done,gym_type,gym_duration_min,gym_rpe,gym_note,nutrition_adherence,note_text,plan_id_snapshot,plan_version_snapshot,created_at,updated_at,deleted_at)
+      values (${rec.id},${rec.userId},${rec.date},${rec.weight},${rec.sleepHours},${rec.sleepQuality},${rec.readiness},${rec.stress},${rec.motivation},${rec.painScore},${rec.painLocation},${rec.painTiming},${rec.runType},${rec.runActualKm},${rec.runRpe},${rec.runNote},${rec.gymDone},${rec.gymType},${rec.gymDurationMin},${rec.gymRpe},${rec.gymNote},${rec.nutritionAdherence},${rec.noteText},${rec.planIdSnapshot},${rec.planVersionSnapshot},${rec.createdAt},${rec.updatedAt},${rec.deletedAt})
       on conflict (user_id, log_date) where (deleted_at is null) do nothing
       returning *`);
     if (r[0]) return { created: true, record: mapDaily(r[0]) };
@@ -82,8 +85,11 @@ export class DailyRepositoryPg implements DailyRepository {
     // Excludes id, user_id, log_date, created_at, plan snapshots — immutable.
     const r = await rows(this.db, sql`
       update daily_logs set
-        weight=${rec.weight}, sleep_hours=${rec.sleepHours}, pain_score=${rec.painScore}, pain_location=${rec.painLocation},
-        run_actual_km=${rec.runActualKm}, run_rpe=${rec.runRpe}, gym_done=${rec.gymDone},
+        weight=${rec.weight}, sleep_hours=${rec.sleepHours},
+        sleep_quality=${rec.sleepQuality}, readiness=${rec.readiness}, stress=${rec.stress}, motivation=${rec.motivation},
+        pain_score=${rec.painScore}, pain_location=${rec.painLocation}, pain_timing=${rec.painTiming},
+        run_type=${rec.runType}, run_actual_km=${rec.runActualKm}, run_rpe=${rec.runRpe}, run_note=${rec.runNote},
+        gym_done=${rec.gymDone}, gym_type=${rec.gymType}, gym_duration_min=${rec.gymDurationMin}, gym_rpe=${rec.gymRpe}, gym_note=${rec.gymNote},
         nutrition_adherence=${rec.nutritionAdherence}, note_text=${rec.noteText},
         updated_at=${rec.updatedAt}, deleted_at=${rec.deletedAt}
       where id=${rec.id} and user_id=${rec.userId}

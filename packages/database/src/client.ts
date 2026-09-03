@@ -25,6 +25,12 @@ export function loadAuthSql(): string {
   return readFileSync(fileURLToPath(url), 'utf8');
 }
 
+/** Read the additive daily-state columns migration (migrations/0003_daily_state.sql). */
+export function loadDailyStateSql(): string {
+  const url = new URL('../../../migrations/0003_daily_state.sql', import.meta.url);
+  return readFileSync(fileURLToPath(url), 'utf8');
+}
+
 /**
  * Create a fresh in-process Postgres (pglite) with migrations applied.
  * @param opts.withAuth also apply 0002_auth.sql (Auth.js tables).
@@ -32,6 +38,7 @@ export function loadAuthSql(): string {
 export async function createTestDatabase(opts?: { withAuth?: boolean }): Promise<{ db: Db; client: PGlite }> {
   const client = new PGlite();
   await client.exec(loadInitSql()); // multi-statement DDL incl. plpgsql triggers
+  await client.exec(loadDailyStateSql()); // MCV-027 additive daily-state columns
   if (opts?.withAuth) await client.exec(loadAuthSql());
   const db = drizzle(client);
   return { db, client };

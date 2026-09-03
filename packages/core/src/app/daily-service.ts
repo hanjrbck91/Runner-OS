@@ -85,8 +85,11 @@ export class DailyService {
       id: this.deps.ids.newId(),
       userId: ctx.userId,
       date,
-      weight: null, sleepHours: null, painScore: null, painLocation: null,
-      runActualKm: null, runRpe: null, gymDone: null, nutritionAdherence: null, noteText: null,
+      weight: null, sleepHours: null, sleepQuality: null, readiness: null, stress: null, motivation: null,
+      painScore: null, painLocation: null, painTiming: null,
+      runType: null, runActualKm: null, runRpe: null, runNote: null,
+      gymDone: null, gymType: null, gymDurationMin: null, gymRpe: null, gymNote: null,
+      nutritionAdherence: null, noteText: null,
       planIdSnapshot: null, planVersionSnapshot: null,
       createdAt: ts, updatedAt: ts, deletedAt: null,
     };

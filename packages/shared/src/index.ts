@@ -21,26 +21,41 @@ export const NutritionSchema = z.enum(['ON', 'MOST', 'OFF']);
 /** A number, or a numeric string, or null (clear). Transport-level only. */
 const NumberLike = z.union([z.number(), z.string(), z.null()]);
 
+const StringOrNull = z.union([z.string(), z.null()]);
+
+// BODY / DAILY STATE. weight/sleep + subjective morning state (MCV-027).
 export const WeightLogSchema = z
   .object({
     weight: NumberLike.optional(),
     sleep: NumberLike.optional(),
     nutrition: z.union([NutritionSchema, z.null()]).optional(),
+    sleepQuality: NumberLike.optional(),
+    readiness: NumberLike.optional(),
+    stress: NumberLike.optional(),
+    motivation: NumberLike.optional(),
   })
   .strict();
 
 export const RunLogSchema = z
   .object({
+    runType: StringOrNull.optional(),
     km: NumberLike.optional(),
     rpe: NumberLike.optional(),
     pain: NumberLike.optional(),
-    painLocation: z.union([z.string(), z.null()]).optional(),
-    note: z.union([z.string(), z.null()]).optional(),
+    painLocation: StringOrNull.optional(),
+    painTiming: StringOrNull.optional(),
+    note: StringOrNull.optional(), // run-specific note (-> runNote), separate from the day NOTE
   })
   .strict();
 
 export const GymLogSchema = z
-  .object({ completed: z.union([z.boolean(), z.null()]).optional() })
+  .object({
+    completed: z.union([z.boolean(), z.null()]).optional(),
+    gymType: StringOrNull.optional(),
+    duration: NumberLike.optional(),
+    rpe: NumberLike.optional(),
+    note: StringOrNull.optional(), // gym-specific note (-> gymNote)
+  })
   .strict();
 
 export const NoteLogSchema = z

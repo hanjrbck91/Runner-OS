@@ -13,18 +13,21 @@ function PlanLine({ k, v }: { k: string; v: string | null }) {
 
 function Logged({ daily }: { daily: DailyView | null }) {
   const empty = !daily || (daily.weight == null && daily.sleepHours == null && daily.runActualKm == null
-    && daily.gymDone == null && daily.painScore == null && !daily.noteText && !daily.nutritionAdherence);
+    && daily.gymDone == null && daily.painScore == null && !daily.noteText && !daily.nutritionAdherence
+    && daily.readiness == null && daily.stress == null && daily.motivation == null && daily.sleepQuality == null);
   if (empty) return <div className="muted">Nothing logged yet.</div>;
   const d = daily!;
   const hasActual = d.runActualKm != null || d.gymDone != null;
-  const hasResponse = d.runRpe != null || d.painScore != null || d.weight != null || d.sleepHours != null || !!d.nutritionAdherence || !!d.noteText;
+  const hasResponse = d.runRpe != null || d.painScore != null || d.weight != null || d.sleepHours != null
+    || d.sleepQuality != null || d.readiness != null || d.stress != null || d.motivation != null
+    || !!d.nutritionAdherence || !!d.noteText;
   return (
     <>
       {hasActual ? (
         <>
           <div className="tagrow"><span className="tag tag-actual">ACTUAL</span></div>
-          {d.runActualKm != null && <KV k="RUN" v={show(d.runActualKm, 'KM')} />}
-          {d.gymDone != null && <KV k="GYM" v={d.gymDone ? '✓ DONE' : '— SKIPPED'} />}
+          {d.runActualKm != null && <KV k="RUN" v={`${d.runType ? `${d.runType} · ` : ''}${show(d.runActualKm, 'KM')}`} />}
+          {d.gymDone != null && <KV k="GYM" v={d.gymDone ? `✓ DONE${d.gymType ? ` · ${d.gymType}` : ''}` : '— SKIPPED'} />}
         </>
       ) : null}
       {hasResponse ? (
@@ -34,6 +37,10 @@ function Logged({ daily }: { daily: DailyView | null }) {
           {d.painScore != null && <KV k="PAIN" v={d.painScore > 0 && d.painLocation ? `${d.painScore} · ${d.painLocation}` : String(d.painScore)} />}
           {d.weight != null && <KV k="WEIGHT" v={show(d.weight, 'KG')} />}
           {d.sleepHours != null && <KV k="SLEEP" v={show(d.sleepHours, 'H')} />}
+          {d.sleepQuality != null && <KV k="SLEEP Q" v={`${d.sleepQuality}/5`} />}
+          {d.readiness != null && <KV k="READINESS" v={`${d.readiness}/10`} />}
+          {d.stress != null && <KV k="STRESS" v={`${d.stress}/10`} />}
+          {d.motivation != null && <KV k="MOTIVATION" v={`${d.motivation}/10`} />}
           {d.nutritionAdherence ? <KV k="NUTRITION" v={d.nutritionAdherence} /> : null}
           {d.noteText ? <KV k="NOTE" v={d.noteText} /> : null}
         </>

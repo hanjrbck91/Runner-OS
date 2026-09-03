@@ -17,8 +17,11 @@ export const NUTRITION_SCORE: Readonly<Record<NutritionAdherence, number>> = { O
 
 /** Fields a client may write on a Daily record. System fields are excluded. */
 export const DAILY_WRITABLE_FIELDS = [
-  'weight', 'sleepHours', 'painScore', 'painLocation', 'runActualKm', 'runRpe',
-  'gymDone', 'nutritionAdherence', 'noteText', 'planIdSnapshot', 'planVersionSnapshot',
+  'weight', 'sleepHours', 'sleepQuality', 'readiness', 'stress', 'motivation',
+  'painScore', 'painLocation', 'painTiming',
+  'runType', 'runActualKm', 'runRpe', 'runNote',
+  'gymDone', 'gymType', 'gymDurationMin', 'gymRpe', 'gymNote',
+  'nutritionAdherence', 'noteText', 'planIdSnapshot', 'planVersionSnapshot',
 ] as const;
 export type DailyWritableField = (typeof DAILY_WRITABLE_FIELDS)[number];
 
@@ -34,11 +37,22 @@ interface FieldRule {
 const DAILY_FIELD_RULES: Record<DailyWritableField, FieldRule> = {
   weight: { type: 'number', min: 0 },
   sleepHours: { type: 'number', min: 0 },
+  sleepQuality: { type: 'integer', min: 1, max: 5 },
+  readiness: { type: 'integer', min: 1, max: 10 },
+  stress: { type: 'integer', min: 1, max: 10 },
+  motivation: { type: 'integer', min: 1, max: 10 },
   painScore: { type: 'integer', min: 0, max: 3 },
   painLocation: { type: 'string' },
+  painTiming: { type: 'string' },
+  runType: { type: 'string' },
   runActualKm: { type: 'number', min: 0 },
   runRpe: { type: 'number', min: 1, max: 10 },
+  runNote: { type: 'string' },
   gymDone: { type: 'boolean' },
+  gymType: { type: 'string' },
+  gymDurationMin: { type: 'number', min: 0 },
+  gymRpe: { type: 'number', min: 1, max: 10 },
+  gymNote: { type: 'string' },
   nutritionAdherence: { type: 'nutrition' },
   noteText: { type: 'string' },
   planIdSnapshot: { type: 'string' },

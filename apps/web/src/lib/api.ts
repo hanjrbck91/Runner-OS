@@ -29,11 +29,22 @@ export interface DailyView {
   id: string;
   weight: number | null;
   sleepHours: number | null;
+  sleepQuality: number | null;
+  readiness: number | null;
+  stress: number | null;
+  motivation: number | null;
   painScore: number | null;
   painLocation: string | null;
+  painTiming: string | null;
+  runType: string | null;
   runActualKm: number | null;
   runRpe: number | null;
+  runNote: string | null;
   gymDone: boolean | null;
+  gymType: string | null;
+  gymDurationMin: number | null;
+  gymRpe: number | null;
+  gymNote: string | null;
   nutritionAdherence: string | null;
   noteText: string | null;
 }
@@ -185,8 +196,8 @@ export const api = {
     if (r.ok) resourceCache.invalidate('plan', 'planOverview', 'today', 'weekly');
     return r;
   },
-  saveWeight: (body: { weight?: number | null; sleep?: number | null; nutrition?: 'ON' | 'MOST' | 'OFF' | null }) => afterSave(post('/api/log/weight', body) as Promise<ApiEnvelope<DailyView>>),
-  saveRun: (body: { km?: number | null; rpe?: number | null; pain?: number | null; painLocation?: string | null; note?: string | null }) => afterSave(post('/api/log/run', body) as Promise<ApiEnvelope<DailyView>>),
-  saveGym: (body: { completed?: boolean | null }) => afterSave(post('/api/log/gym', body) as Promise<ApiEnvelope<DailyView>>),
+  saveWeight: (body: { weight?: number | null; sleep?: number | null; nutrition?: 'ON' | 'MOST' | 'OFF' | null; sleepQuality?: number | null; readiness?: number | null; stress?: number | null; motivation?: number | null }) => afterSave(post('/api/log/weight', body) as Promise<ApiEnvelope<DailyView>>),
+  saveRun: (body: { runType?: string | null; km?: number | null; rpe?: number | null; pain?: number | null; painLocation?: string | null; painTiming?: string | null; note?: string | null }) => afterSave(post('/api/log/run', body) as Promise<ApiEnvelope<DailyView>>),
+  saveGym: (body: { completed?: boolean | null; gymType?: string | null; duration?: number | null; rpe?: number | null; note?: string | null }) => afterSave(post('/api/log/gym', body) as Promise<ApiEnvelope<DailyView>>),
   saveNote: (body: { note?: string | null }) => afterSave(post('/api/log/note', body) as Promise<ApiEnvelope<DailyView>>),
 };

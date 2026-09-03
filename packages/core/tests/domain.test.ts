@@ -10,8 +10,12 @@ const nowIso = '2026-08-31T06:00:00.000Z';
 
 function daily(partial: Partial<DailyRecord> & { date: string }): DailyRecord {
   return {
-    id: 'd', userId: 'u', weight: null, sleepHours: null, painScore: null, painLocation: null,
-    runActualKm: null, runRpe: null, gymDone: null, nutritionAdherence: null, noteText: null,
+    id: 'd', userId: 'u', weight: null, sleepHours: null,
+    sleepQuality: null, readiness: null, stress: null, motivation: null,
+    painScore: null, painLocation: null, painTiming: null,
+    runType: null, runActualKm: null, runRpe: null, runNote: null,
+    gymDone: null, gymType: null, gymDurationMin: null, gymRpe: null, gymNote: null,
+    nutritionAdherence: null, noteText: null,
     planIdSnapshot: null, planVersionSnapshot: null, createdAt: nowIso, updatedAt: nowIso, deletedAt: null,
     ...partial,
   };

@@ -279,6 +279,65 @@ describe('M07-D — API handlers', () => {
     expect((await H.saveWeight(env, { session: valid, body: { nutrition: 'SOMETIMES' } })).status).toBe(400);
   });
 
+  it('T30 daily-state fields persist + validate (MCV-027)', async () => {
+    const s = await H.saveWeight(env, { session: valid, body: { weight: 75, sleep: 7, sleepQuality: 4, readiness: 8, stress: 3, motivation: 9 } });
+    expect(s.status).toBe(200);
+    const day = body(await H.today(env, { session: valid })).data.daily;
+    expect(day.sleepQuality).toBe(4);
+    expect(day.readiness).toBe(8);
+    expect(day.stress).toBe(3);
+    expect(day.motivation).toBe(9);
+    // range checks enforced by core (readiness 1..10).
+    expect((await H.saveWeight(env, { session: valid, body: { readiness: 99 } })).status).toBe(400);
+    expect((await H.saveWeight(env, { session: valid, body: { sleepQuality: 6 } })).status).toBe(400);
+  });
+
+  it('T31 run: type/timing persist; pain>0 sets injury detail, pain=0 clears it', async () => {
+    const r = await H.saveRun(env, { session: valid, body: { runType: 'Easy', km: 7, rpe: 3, pain: 2, painLocation: 'Knee', painTiming: 'During run', note: 'felt ok' } });
+    expect(r.status).toBe(200);
+    let day = body(await H.today(env, { session: valid })).data.daily;
+    expect(day.runType).toBe('Easy');
+    expect(day.painLocation).toBe('Knee');
+    expect(day.painTiming).toBe('During run');
+    expect(day.runNote).toBe('felt ok');
+    expect(day.noteText).toBeNull(); // run note is separate from the day NOTE
+    // pain back to 0 clears injury detail (client sends null; core clears).
+    await H.saveRun(env, { session: valid, body: { pain: 0, painLocation: null, painTiming: null } });
+    day = body(await H.today(env, { session: valid })).data.daily;
+    expect(day.painScore).toBe(0);
+    expect(day.painLocation).toBeNull();
+    expect(day.painTiming).toBeNull();
+  });
+
+  it('T32 gym: type/duration/rpe/note persist', async () => {
+    const r = await H.saveGym(env, { session: valid, body: { completed: true, gymType: 'Lower body', duration: 45, rpe: 6, note: 'squats felt strong' } });
+    expect(r.status).toBe(200);
+    const day = body(await H.today(env, { session: valid })).data.daily;
+    expect(day.gymDone).toBe(true);
+    expect(day.gymType).toBe('Lower body');
+    expect(day.gymDurationMin).toBe(45);
+    expect(day.gymRpe).toBe(6);
+    expect(day.gymNote).toBe('squats felt strong');
+  });
+
+  it('T33 section isolation: each logger writes only its own fields', async () => {
+    await H.saveRun(env, { session: valid, body: { runType: 'Long', km: 12, rpe: 4 } });
+    await H.saveGym(env, { session: valid, body: { completed: true, gymType: 'Strength' } });
+    await H.saveWeight(env, { session: valid, body: { weight: 74, readiness: 7 } });
+    await H.saveNote(env, { session: valid, body: { note: 'good day' } });
+    const day = body(await H.today(env, { session: valid })).data.daily;
+    // all four sections coexist, untouched by each other
+    expect(day.runActualKm).toBe(12); expect(day.runType).toBe('Long');
+    expect(day.gymDone).toBe(true); expect(day.gymType).toBe('Strength');
+    expect(day.weight).toBe(74); expect(day.readiness).toBe(7);
+    expect(day.noteText).toBe('good day');
+    // saving RUN again does not disturb gym / state / day note
+    await H.saveRun(env, { session: valid, body: { km: 13 } });
+    const d2 = body(await H.today(env, { session: valid })).data.daily;
+    expect(d2.runActualKm).toBe(13);
+    expect(d2.gymType).toBe('Strength'); expect(d2.weight).toBe(74); expect(d2.noteText).toBe('good day');
+  });
+
   it('T17 no DB internals leak; 404 mapping; safe error shape', async () => {
     const r = await H.plan(env, { session: valid, query: { date: '2026-01-15' } });
     expect(r.status).toBe(404);
