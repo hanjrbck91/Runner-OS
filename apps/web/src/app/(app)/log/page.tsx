@@ -6,12 +6,13 @@ import { useResource, useSave } from '../../../lib/useApi.js';
 import { Loading, ErrorBanner, Panel, SaveButton, Banner } from '../../../components/ui.js';
 
 /**
- * Log = an ACTION CONSOLE, not one giant form. The landing view shows four
- * independent blocks (RUN / GYM / DAILY STATE / NOTE); each opens its own
- * focused logger. Planned (coach) is read-only context and is NEVER copied into
- * actual inputs. Each logger saves only its own fields (isolation preserved).
+ * Log = a single focused logging console with four modes: RUN / GYM / STATE /
+ * NOTE. The mode tabs stay sticky while scrolling. Only the selected logger is
+ * shown. Planned (coach) is read-only context — never copied into actual inputs.
+ * Each logger saves only its own fields (isolation preserved). Backend fields
+ * and behavior are unchanged.
  */
-type View = 'console' | 'run' | 'gym' | 'state' | 'note';
+type Tab = 'run' | 'gym' | 'state' | 'note';
 
 const RPE_LABELS: Record<number, string> = {
   1: 'Extremely easy', 2: 'Very easy', 3: 'Easy', 4: 'Comfortable', 5: 'Moderate',
@@ -20,140 +21,70 @@ const RPE_LABELS: Record<number, string> = {
 const PAIN_LABELS: Record<number, string> = { 0: 'No pain', 1: 'Noticeable', 2: 'Needs attention', 3: 'Stop / do not proceed' };
 const PAIN_LOCATIONS = ['Calf', 'Achilles / tendon', 'Foot', 'Ankle', 'Shin', 'Knee', 'Quad', 'Hamstring', 'Hip', 'Glute', 'Other'];
 const PAIN_TIMINGS = ['Before run', 'During run', 'After run', 'Next morning'];
-const RUN_TYPES = ['Easy', 'Long', 'Quality', 'Tempo', 'Threshold', 'Intervals', 'Marathon pace', 'Recovery', 'Race', 'Other'];
+const RUN_TYPES = ['Easy', 'Recovery', 'Long', 'Workout', 'Race', 'Walk/run', 'Other'];
 const GYM_TYPES = ['Strength', 'Lower body', 'Upper body', 'Full body', 'Mobility', 'Rehab / prehab', 'Other'];
+
+function loggedFlags(d: DailyView | null) {
+  return {
+    run: !!d && (d.runActualKm != null || d.runType != null || d.runRpe != null || d.painScore != null),
+    gym: !!d && d.gymDone != null,
+    state: !!d && (d.weight != null || d.sleepHours != null || d.readiness != null || d.stress != null || d.motivation != null || d.sleepQuality != null),
+    note: !!d && !!d.noteText,
+  };
+}
 
 export default function LogPage() {
   const loader = useCallback(() => api.today(), []);
   const t = useResource(loader, 'today');
-  const [view, setView] = useState<View>('console');
+  const [tab, setTab] = useState<Tab>('run');
 
   if (t.status === 'loading') return <Loading label="SYNCING" />;
   if (t.status === 'error') return <ErrorBanner error={t.error} onRetry={t.reload} />;
   const d = t.data!;
-  const back = () => setView('console');
   const onSaved = () => { t.reload(); };
+  const flags = loggedFlags(d.daily);
+  const tabs: Array<[Tab, string]> = [['run', 'RUN'], ['gym', 'GYM'], ['state', 'STATE'], ['note', 'NOTE']];
 
   return (
     <div>
-      <Header d={d} view={view} onBack={back} />
-      {view === 'console' && <Console d={d} open={setView} />}
-      {view === 'run' && <RunLogger daily={d.daily} plan={d.plan} onSaved={onSaved} onDone={back} />}
-      {view === 'gym' && <GymLogger daily={d.daily} plan={d.plan} onSaved={onSaved} onDone={back} />}
-      {view === 'state' && <StateLogger daily={d.daily} onSaved={onSaved} onDone={back} />}
-      {view === 'note' && <NoteLogger daily={d.daily} onSaved={onSaved} onDone={back} />}
-    </div>
-  );
-}
-
-function Header({ d, view, onBack }: { d: TodayView; view: View; onBack: () => void }) {
-  return (
-    <Panel title={view === 'console' ? 'LOG' : `LOG · ${view.toUpperCase()}`}>
-      <div className="big">{fmtDate(d.date)}</div>
-      <div className="muted">
-        {d.weekNumber != null ? `WEEK ${String(d.weekNumber).padStart(2, '0')}` : 'WEEK —'}
-        {d.phase ? ` · ${d.phase}` : ''}
-      </div>
-      {view !== 'console' ? (
-        <div style={{ marginTop: 10 }}><button data-action="back" onClick={onBack}>← BACK TO LOG</button></div>
-      ) : null}
-    </Panel>
-  );
-}
-
-// ---------- CONSOLE (four blocks) ----------
-function Console({ d, open }: { d: TodayView; open: (v: View) => void }) {
-  const daily = d.daily;
-  const plannedRun = d.plan?.runPlan ?? d.plan?.longRunPlan ?? d.plan?.qualityPlan ?? null;
-  const plannedGym = d.plan?.gymPlan ?? null;
-
-  const runLogged = daily && (daily.runActualKm != null || daily.runType != null || daily.runRpe != null || daily.painScore != null);
-  const gymLogged = daily && daily.gymDone != null;
-  const stateLogged = daily && (daily.weight != null || daily.sleepHours != null || daily.readiness != null || daily.stress != null || daily.motivation != null || daily.sleepQuality != null || !!daily.nutritionAdherence);
-  const noteText = daily?.noteText ?? '';
-
-  return (
-    <div>
-      <Block title="RUN" planned={plannedRun} plannedEmpty="No run planned"
-        summary={runLogged ? runSummary(daily!) : null}
-        action={runLogged ? 'EDIT RUN' : 'LOG RUN →'} onOpen={() => open('run')} />
-
-      <Block title="GYM" planned={plannedGym} plannedEmpty="No gym planned"
-        summary={gymLogged ? (daily!.gymDone ? `Done${daily!.gymType ? ` · ${daily!.gymType}` : ''}${daily!.gymDurationMin != null ? ` · ${daily!.gymDurationMin} min` : ''}` : 'Skipped') : null}
-        action={gymLogged ? 'EDIT GYM' : 'LOG GYM →'} onOpen={() => open('gym')} />
-
-      <Block title="DAILY STATE" hint="Weight · Sleep · Readiness · Stress · Motivation"
-        summary={stateLogged ? stateSummary(daily!) : null}
-        action={stateLogged ? 'EDIT STATE' : 'LOG STATE →'} onOpen={() => open('state')} />
-
-      <Panel title="NOTE">
-        {noteText.trim() !== '' ? (
-          <>
-            <div className="lcd locked" data-field="note-locked">{noteText}</div>
-            <div className="saved-tag">SAVED · LOCKED</div>
-            <div style={{ marginTop: 10 }}><button data-action="edit-note" onClick={() => open('note')}>EDIT NOTE</button></div>
-          </>
-        ) : (
-          <>
-            <div className="muted" style={{ marginBottom: 10 }}>Anything important today.</div>
-            <button className="primary" data-action="add-note" onClick={() => open('note')}>ADD NOTE →</button>
-          </>
-        )}
+      <Panel title="LOG">
+        <div className="big">{fmtDate(d.date)}</div>
+        <div className="muted">
+          {d.weekNumber != null ? `WEEK ${String(d.weekNumber).padStart(2, '0')}` : 'WEEK —'}
+          {d.phase ? ` · ${d.phase}` : ''}
+        </div>
       </Panel>
+
+      <div className="logtabs" role="tablist" aria-label="log mode">
+        {tabs.map(([id, label]) => (
+          <button key={id} role="tab" aria-selected={tab === id} data-tab={label}
+            className={tab === id ? 'sel' : ''} onClick={() => setTab(id)}>
+            {label}
+            {flags[id] ? <span className="dot" aria-label="logged" /> : null}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'run' && <RunLogger daily={d.daily} plan={d.plan} onSaved={onSaved} />}
+      {tab === 'gym' && <GymLogger daily={d.daily} plan={d.plan} onSaved={onSaved} />}
+      {tab === 'state' && <StateLogger daily={d.daily} onSaved={onSaved} />}
+      {tab === 'note' && <NoteLogger daily={d.daily} onSaved={onSaved} />}
     </div>
   );
 }
 
-function Block({ title, planned, plannedEmpty, hint, summary, action, onOpen }:
-  { title: string; planned?: string | null; plannedEmpty?: string; hint?: string; summary: string | null; action: string; onOpen: () => void }) {
-  return (
-    <Panel title={title}>
-      {planned !== undefined ? (
-        <>
-          <div className="tagrow"><span className="tag tag-planned">TODAY&apos;S PLAN</span></div>
-          <div className="big">{planned ?? plannedEmpty}</div>
-        </>
-      ) : null}
-      {hint ? <div className="muted" style={{ marginBottom: summary ? 6 : 10 }}>{hint}</div> : null}
-      {summary ? (
-        <div className="logged"><span className="tag tag-actual">LOGGED</span> <span>{summary}</span></div>
-      ) : null}
-      <button className={summary ? '' : 'primary'} data-action={`open-${title.toLowerCase().replace(/\s+/g, '-')}`} style={{ marginTop: 10 }} onClick={onOpen}>{action}</button>
-    </Panel>
-  );
-}
-
-function runSummary(d: DailyView): string {
-  const parts: string[] = [];
-  if (d.runType) parts.push(d.runType);
-  if (d.runActualKm != null) parts.push(`${d.runActualKm} km`);
-  if (d.runRpe != null) parts.push(`RPE ${d.runRpe}`);
-  if (d.painScore != null) parts.push(`pain ${d.painScore}${d.painScore > 0 && d.painLocation ? ` (${d.painLocation})` : ''}`);
-  return parts.join(' · ') || 'Logged';
-}
-function stateSummary(d: DailyView): string {
-  const parts: string[] = [];
-  if (d.weight != null) parts.push(`${d.weight} kg`);
-  if (d.sleepHours != null) parts.push(`${d.sleepHours} h`);
-  if (d.sleepQuality != null) parts.push(`sleep ${d.sleepQuality}/5`);
-  if (d.readiness != null) parts.push(`ready ${d.readiness}/10`);
-  if (d.stress != null) parts.push(`stress ${d.stress}/10`);
-  if (d.motivation != null) parts.push(`mot ${d.motivation}/10`);
-  return parts.join(' · ') || 'Logged';
-}
-
-// ---------- shared controls ----------
+// ---------- shared ----------
 function States({ status, error }: { status: string; error: { code: string; message: string } | null }) {
-  if (status === 'saved') return <Banner kind="ok">SAVED</Banner>;
+  if (status === 'saved') return <Banner kind="ok">SAVED · LOCKED</Banner>;
   if (status === 'error') return <Banner kind="err">{humanError(error)}</Banner>;
   return null;
 }
 const numOrOmit = (v: string) => (v.trim() === '' ? undefined : Number(v));
 
-function PlanCtx({ planned }: { planned: string | null }) {
+function PlanCtx({ label, planned }: { label: string; planned: string | null }) {
   return (
-    <Panel>
-      <div className="tagrow"><span className="tag tag-planned">TODAY&apos;S PLAN</span><span className="muted">read-only</span></div>
+    <Panel title={`${label} · TODAY'S PLAN`}>
+      <div className="tagrow"><span className="tag tag-planned">PLANNED</span><span className="muted">read-only</span></div>
       <div className="big">{planned ?? 'NO PLAN SCHEDULED'}</div>
     </Panel>
   );
@@ -182,8 +113,25 @@ function RpeGrid({ value, onChange, field }: { value: number | null; onChange: (
   );
 }
 
-// ---------- RUN LOGGER ----------
-function RunLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; plan: PlanView | null; onSaved: () => void; onDone: () => void }) {
+/** Tap-to-set segmented scale with dot-matrix readout (STATE tab). */
+function TapScale({ label, value, onChange, max, amber, field }: { label: string; value: number | null; onChange: (v: number) => void; max: number; amber?: boolean; field: string }) {
+  return (
+    <>
+      <label>{label}</label>
+      <div className="tapscale" data-field={field}>
+        <div className="cells">
+          {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
+            <button type="button" key={n} className={value != null && n <= value ? 'on' : ''} aria-label={String(n)} onClick={() => onChange(n)} />
+          ))}
+        </div>
+        <span className={`num${amber && value != null && value > 7 ? ' amber' : ''}`}>{value ?? '—'}</span>
+      </div>
+    </>
+  );
+}
+
+// ---------- RUN ----------
+function RunLogger({ daily, plan, onSaved }: { daily: DailyView | null; plan: PlanView | null; onSaved: () => void }) {
   const planned = plan?.runPlan ?? plan?.longRunPlan ?? plan?.qualityPlan ?? null;
   const [runType, setRunType] = useState<string | null>(daily?.runType ?? null);
   const [km, setKm] = useState(daily?.runActualKm != null ? String(daily.runActualKm) : '');
@@ -202,27 +150,25 @@ function RunLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; 
     if (rpe !== null) body.rpe = rpe;
     if (pain !== null) {
       body.pain = pain;
-      // Injury detail is meaningful only when pain > 0; clear it otherwise.
       body.painLocation = pain > 0 ? painLoc : null;
       body.painTiming = pain > 0 ? painTiming : null;
     }
     if (note.trim() !== '') body.note = note;
     const r = await run(() => api.saveRun(body));
-    if (r?.ok) { onSaved(); onDone(); }
+    if (r?.ok) onSaved();
   }
 
   return (
     <form onSubmit={submit}>
-      <PlanCtx planned={planned} />
-      <Panel>
-        <div className="tagrow"><span className="tag tag-actual">ACTUAL</span></div>
+      <PlanCtx label="RUN" planned={planned} />
+      <Panel title="ACTUAL RUN">
         <label>RUN TYPE</label>
         <Chips value={runType} options={RUN_TYPES} onChange={setRunType} field="runType" />
-        <label>ACTUAL KM</label>
-        <input inputMode="decimal" value={km} onChange={(e) => setKm(e.target.value)} data-field="km" />
+        <label>DISTANCE (KM)</label>
+        <input inputMode="decimal" value={km} onChange={(e) => setKm(e.target.value)} data-field="km" placeholder="actual km" />
 
         <div className="tagrow" style={{ marginTop: 12 }}><span className="tag tag-response">RESPONSE</span></div>
-        <label>RPE (EFFORT)</label>
+        <label>RPE — EFFORT</label>
         <RpeGrid value={rpe} onChange={setRpe} field="rpe" />
         <label>PAIN</label>
         <div className="seg" data-field="pain">
@@ -240,7 +186,7 @@ function RunLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; 
             <Chips value={painTiming} options={PAIN_TIMINGS} onChange={setPainTiming} field="painTiming" />
           </div>
         ) : null}
-        <label>RUN NOTE</label>
+        <label>NOTE</label>
         <textarea value={note} onChange={(e) => setNote(e.target.value)} data-field="note" placeholder="Anything about the run…" />
         <States status={status} error={error} />
         <div style={{ marginTop: 12 }}><SaveButton status={status} label="SAVE RUN" /></div>
@@ -249,8 +195,8 @@ function RunLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; 
   );
 }
 
-// ---------- GYM LOGGER ----------
-function GymLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; plan: PlanView | null; onSaved: () => void; onDone: () => void }) {
+// ---------- GYM ----------
+function GymLogger({ daily, plan, onSaved }: { daily: DailyView | null; plan: PlanView | null; onSaved: () => void }) {
   const planned = plan?.gymPlan ?? null;
   const [done, setDone] = useState<boolean | null>(daily?.gymDone ?? null);
   const [gymType, setGymType] = useState<string | null>(daily?.gymType ?? null);
@@ -270,15 +216,14 @@ function GymLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; 
       if (note.trim() !== '') body.note = note;
     }
     const r = await run(() => api.saveGym(body));
-    if (r?.ok) { onSaved(); onDone(); }
+    if (r?.ok) onSaved();
   }
 
   return (
     <form onSubmit={submit}>
-      <PlanCtx planned={planned} />
-      <Panel>
-        <div className="tagrow"><span className="tag tag-actual">ACTUAL</span></div>
-        <label>COMPLETED?</label>
+      <PlanCtx label="GYM" planned={planned} />
+      <Panel title="ACTUAL GYM">
+        <label>GYM SESSION</label>
         <div className="toggle" data-field="gym">
           <button type="button" className={done === true ? 'sel' : ''} onClick={() => setDone(true)}>YES</button>
           <button type="button" className={done === false ? 'sel' : ''} onClick={() => setDone(false)}>NO</button>
@@ -288,10 +233,10 @@ function GymLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; 
             <label>SESSION TYPE</label>
             <Chips value={gymType} options={GYM_TYPES} onChange={setGymType} field="gymType" />
             <label>DURATION (MIN)</label>
-            <input inputMode="numeric" value={duration} onChange={(e) => setDuration(e.target.value)} data-field="duration" />
-            <label>RPE (EFFORT)</label>
+            <input inputMode="numeric" value={duration} onChange={(e) => setDuration(e.target.value)} data-field="duration" placeholder="minutes" />
+            <label>RPE — EFFORT</label>
             <RpeGrid value={rpe} onChange={setRpe} field="gymRpe" />
-            <label>GYM NOTE</label>
+            <label>NOTE</label>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} data-field="gymNote" placeholder="Anything about the session…" />
           </>
         ) : null}
@@ -302,23 +247,8 @@ function GymLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; 
   );
 }
 
-// ---------- DAILY STATE LOGGER ----------
-function Scale({ label, value, onChange, min, max, field }: { label: string; value: number | null; onChange: (v: number) => void; min: number; max: number; field: string }) {
-  const opts = [];
-  for (let i = min; i <= max; i += 1) opts.push(i);
-  return (
-    <>
-      <label>{label}</label>
-      <div className="seg wrap" data-field={field}>
-        {opts.map((n) => (
-          <button type="button" key={n} className={value === n ? 'sel' : ''} onClick={() => onChange(n)}>{n}</button>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function StateLogger({ daily, onSaved, onDone }: { daily: DailyView | null; onSaved: () => void; onDone: () => void }) {
+// ---------- DAILY STATE ----------
+function StateLogger({ daily, onSaved }: { daily: DailyView | null; onSaved: () => void }) {
   const [weight, setWeight] = useState(daily?.weight != null ? String(daily.weight) : '');
   const [sleep, setSleep] = useState(daily?.sleepHours != null ? String(daily.sleepHours) : '');
   const [sleepQ, setSleepQ] = useState<number | null>(daily?.sleepQuality ?? null);
@@ -337,21 +267,21 @@ function StateLogger({ daily, onSaved, onDone }: { daily: DailyView | null; onSa
     if (stress !== null) body.stress = stress;
     if (motivation !== null) body.motivation = motivation;
     const r = await run(() => api.saveWeight(body));
-    if (r?.ok) { onSaved(); onDone(); }
+    if (r?.ok) onSaved();
   }
 
   return (
     <form onSubmit={submit}>
-      <Panel>
+      <Panel title="DAILY STATE">
         <div className="muted" style={{ marginBottom: 8 }}>Morning check-in — about a minute.</div>
         <div className="row">
           <div><label>WEIGHT (KG)</label><input inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} data-field="weight" /></div>
           <div><label>SLEEP (H)</label><input inputMode="decimal" value={sleep} onChange={(e) => setSleep(e.target.value)} data-field="sleep" /></div>
         </div>
-        <Scale label="SLEEP QUALITY (1-5)" value={sleepQ} onChange={setSleepQ} min={1} max={5} field="sleepQuality" />
-        <Scale label="READINESS (1-10)" value={readiness} onChange={setReadiness} min={1} max={10} field="readiness" />
-        <Scale label="STRESS (1-10)" value={stress} onChange={setStress} min={1} max={10} field="stress" />
-        <Scale label="MOTIVATION (1-10)" value={motivation} onChange={setMotivation} min={1} max={10} field="motivation" />
+        <TapScale label="SLEEP QUALITY 1–5" value={sleepQ} onChange={setSleepQ} max={5} field="sleepQuality" />
+        <TapScale label="READINESS 1–10" value={readiness} onChange={setReadiness} max={10} field="readiness" />
+        <TapScale label="STRESS 1–10" value={stress} onChange={setStress} max={10} amber field="stress" />
+        <TapScale label="MOTIVATION 1–10" value={motivation} onChange={setMotivation} max={10} field="motivation" />
         <States status={status} error={error} />
         <div style={{ marginTop: 12 }}><SaveButton status={status} label="SAVE STATE" /></div>
       </Panel>
@@ -359,24 +289,46 @@ function StateLogger({ daily, onSaved, onDone }: { daily: DailyView | null; onSa
   );
 }
 
-// ---------- NOTE LOGGER ----------
-function NoteLogger({ daily, onSaved, onDone }: { daily: DailyView | null; onSaved: () => void; onDone: () => void }) {
-  const [note, setNote] = useState(daily?.noteText ?? '');
+// ---------- NOTE ----------
+function NoteLogger({ daily, onSaved }: { daily: DailyView | null; onSaved: () => void }) {
+  const saved = daily?.noteText ?? '';
+  const [note, setNote] = useState(saved);
+  const [editing, setEditing] = useState(saved.trim() === '');
   const { status, error, run } = useSave();
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const r = await run(() => api.saveNote({ note })); // '' clears
-    if (r?.ok) { onSaved(); onDone(); }
+    if (r?.ok) { setEditing(false); onSaved(); }
   }
+
+  if (!editing) {
+    return (
+      <Panel title="NOTE">
+        {note.trim() === '' ? (
+          <div className="muted">No note yet.</div>
+        ) : (
+          <>
+            <div className="locked" data-field="note-locked">{note}</div>
+            <div className="saved-tag">SAVED · LOCKED</div>
+          </>
+        )}
+        <div style={{ marginTop: 12 }}>
+          <button type="button" data-action="edit-note" onClick={() => setEditing(true)}>EDIT NOTE</button>
+        </div>
+      </Panel>
+    );
+  }
+
   return (
     <form onSubmit={submit}>
-      <Panel>
+      <Panel title="NOTE">
         <div className="muted" style={{ marginBottom: 8 }}>Write what happened, in your own words.</div>
-        <textarea value={note} onChange={(e) => setNote(e.target.value)} data-field="note" placeholder="Woke up with heavy calves. Easy 4 km felt fine…" style={{ minHeight: 140 }} />
-        {/* Attachment area — reserved so future TEXT + PHOTO + AUDIO attach here without redesign. */}
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} data-field="note" placeholder="Woke up with heavy calves. Easy 4 km felt fine…" style={{ minHeight: 150 }} />
+        {/* Reserved: future TEXT + PHOTO + AUDIO attach here without redesign. */}
         <div className="row" style={{ marginTop: 8 }}>
-          <button type="button" disabled title="Coming soon">+ PHOTO (SOON)</button>
-          <button type="button" disabled title="Coming soon">+ AUDIO (SOON)</button>
+          <button type="button" disabled title="Not available yet">+ PHOTO</button>
+          <button type="button" disabled title="Not available yet">+ AUDIO</button>
         </div>
         <States status={status} error={error} />
         <div style={{ marginTop: 12 }}><SaveButton status={status} label="SAVE NOTE" /></div>

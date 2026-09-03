@@ -66,7 +66,7 @@ function Overview({ d }: { d: PlanOverview }) {
 
         <KV k="PHASE" v={d.currentPhase ?? '—'} />
         <KV k="THIS WEEK KM" v={<Dm tone="green">{d.currentWeekPlannedKm ?? '—'}</Dm>} />
-        {d.daysToRace !== null ? <KV k="RACE IN" v={<><Dm tone="amber">{d.daysToRace}</Dm> <span className="muted">DAYS</span></>} /> : null}
+        {d.daysToRace !== null ? <KV k="RACE IN" v={<><Dm>{d.daysToRace}</Dm> <span className="muted">DAYS</span></>} /> : null}
         <KV k="PLANNED KM" v={<Dm>{d.plannedTotalKm}</Dm>} />
         {d.completionPercentage !== null ? (
           <>
