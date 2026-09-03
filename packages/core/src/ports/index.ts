@@ -48,6 +48,8 @@ export interface PlanRepository {
   listByPlanDate(userId: string, planDate: LocalDate): Promise<PlanVersion[]>;
   listByPlanDateRange(userId: string, start: LocalDate, end: LocalDate): Promise<PlanVersion[]>;
   insert(version: PlanVersion): Promise<PlanVersion>;
+  /** Bulk insert many versions in ONE round-trip (plan import). */
+  insertMany(versions: readonly PlanVersion[]): Promise<void>;
   update(version: PlanVersion): Promise<PlanVersion>;
   /**
    * Hard-delete every plan version whose planDate is in `dates` for this user.

@@ -71,6 +71,8 @@ a { color: var(--accent); }
 /* Plan progress + import (MC-025) */
 .prog { height: 14px; background: var(--field); border: 2px solid var(--line); border-radius: 3px; overflow: hidden; margin: 8px 0; }
 .prog > i { display: block; height: 100%; background: var(--accent); }
+.prog > i.indet { width: 40%; animation: indet 1.1s ease-in-out infinite; }
+@keyframes indet { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
 .up { border-bottom: 1px dotted var(--line); padding: 6px 0; display: flex; justify-content: space-between; gap: 8px; }
 .up .d { color: var(--lcd-dim); min-width: 92px; }
 .up .s { color: var(--lcd); text-align: right; flex: 1; }

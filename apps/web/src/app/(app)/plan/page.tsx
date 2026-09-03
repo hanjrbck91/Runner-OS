@@ -67,7 +67,16 @@ function ImportFlow({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
   const [result, setResult] = useState<ImportResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [committing, setCommitting] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [err, setErr] = useState<string | null>(null);
+
+  // Live elapsed counter while committing, so the import never looks frozen.
+  useEffect(() => {
+    if (!committing) { setElapsed(0); return; }
+    const t0 = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 250);
+    return () => clearInterval(id);
+  }, [committing]);
 
   // While a commit is in flight, warn before the tab is closed/refreshed. The
   // write is atomic server-side, so a refusal just means "wait"; a refresh will
@@ -174,7 +183,12 @@ function ImportFlow({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
             </Banner>
           ) : null}
 
-          {committing ? <Banner kind="ok">IMPORTING — please wait, do not close or refresh this tab.</Banner> : null}
+          {committing ? (
+            <div style={{ marginTop: 10 }}>
+              <div className="prog"><i className="indet" /></div>
+              <Banner kind="ok">IMPORTING {preview.rowCount} days… {elapsed}s — do not close or refresh this tab.</Banner>
+            </div>
+          ) : null}
 
           <div className="row" style={{ marginTop: 12 }}>
             <button onClick={onCancel} disabled={busy}>CANCEL</button>

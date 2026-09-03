@@ -207,6 +207,9 @@ describe('MC-025 — plan import', () => {
     const res = await unwrap(svc.planImport.commit(ctx, text));
     expect(res.versionsCreated).toBe(140);
     expect(res.weekCount).toBe(20);
+    // Bulk write: one insertMany + one audit append, regardless of row count.
+    expect(deps.plans.records.length).toBe(140);
+    expect(deps.audit.records.length).toBe(140); // one audit entry per version, one batch
     // Race day milestone captured.
     const race = await unwrap(svc.plans.getForDate(ctx, '2027-01-18'));
     expect(race.milestone).toMatch(/Mumbai Marathon/);

@@ -114,6 +114,16 @@ export class PlanRepositoryPg implements PlanRepository {
       returning *`);
     return mapPlan(r[0]!);
   }
+  async insertMany(versions: readonly PlanVersion[]): Promise<void> {
+    if (versions.length === 0) return;
+    const values = sql.join(
+      versions.map((v) => sql`(${v.id},${v.userId},${v.planDate},${v.version},${v.phase},${v.runPlan},${v.longRunPlan},${v.qualityPlan},${v.gymPlan},${v.recoveryPlan},${v.mileageTarget},${v.bodyCompositionTarget},${v.milestone},${v.weekNumber},${v.effectiveFrom},${v.effectiveTo},${v.isActive},${v.createdAt},${v.updatedAt})`),
+      sql`, `,
+    );
+    await this.db.execute(sql`
+      insert into plan_versions (id,user_id,plan_date,version,phase,run_plan,long_run_plan,quality_plan,gym_plan,recovery_plan,mileage_target,body_composition_target,milestone,week_number,effective_from,effective_to,is_active,created_at,updated_at)
+      values ${values}`);
+  }
   async update(v: PlanVersion): Promise<PlanVersion> {
     const r = await rows(this.db, sql`
       update plan_versions set
@@ -140,11 +150,15 @@ export class PlanRepositoryPg implements PlanRepository {
 export class AuditRepositoryPg implements AuditRepository {
   constructor(private readonly db: Db) {}
   async append(entries: readonly AuditEntry[]): Promise<void> {
-    for (const e of entries) {
-      await this.db.execute(sql`
-        insert into audit_log (id,user_id,ts,entity_type,entity_id,action,field_changed,old_value,new_value,actor,reason)
-        values (${e.id},${e.userId},${e.timestamp},${e.entityType},${e.entityId},${e.action},${e.fieldChanged},${e.oldValue},${e.newValue},${e.actor},${e.reason})`);
-    }
+    if (entries.length === 0) return;
+    // Single multi-row insert (one round-trip) — matters for bulk plan import.
+    const values = sql.join(
+      entries.map((e) => sql`(${e.id},${e.userId},${e.timestamp},${e.entityType},${e.entityId},${e.action},${e.fieldChanged},${e.oldValue},${e.newValue},${e.actor},${e.reason})`),
+      sql`, `,
+    );
+    await this.db.execute(sql`
+      insert into audit_log (id,user_id,ts,entity_type,entity_id,action,field_changed,old_value,new_value,actor,reason)
+      values ${values}`);
   }
   async listByEntity(userId: string, entityType: string, entityId: string): Promise<AuditEntry[]> {
     const r = await rows(this.db, sql`select * from audit_log where user_id=${userId} and entity_type=${entityType} and entity_id=${entityId} order by ts`);

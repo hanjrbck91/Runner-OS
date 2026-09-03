@@ -18,13 +18,14 @@
  */
 import { ok, fail, type Result } from '../result.js';
 import type { CoreDependencies, UserContext } from '../ports/index.js';
+import type { PlanVersion, AuditEntry } from '../domain/types.js';
 import type { LocalDate } from '../domain/time.js';
 import { localDateInTimezone, compareDate } from '../domain/time.js';
+import { validatePlanFields } from '../domain/rules.js';
 import {
   parsePlanCsv, mapPlanRow, PLAN_CSV_COLUMNS, PLAN_CSV_REQUIRED_COLUMNS,
   type MappedPlanRow, type RowError,
 } from '../domain/plan-csv.js';
-import { PlanService } from './plan-service.js';
 
 export interface WeekSummary {
   readonly weekNumber: number;
@@ -83,10 +84,7 @@ function previewRow(m: MappedPlanRow): PreviewRow {
 }
 
 export class PlanImportService {
-  private readonly plans: PlanService;
-  constructor(private readonly deps: CoreDependencies) {
-    this.plans = new PlanService(deps);
-  }
+  constructor(private readonly deps: CoreDependencies) {}
 
   private today(): LocalDate {
     return localDateInTimezone(this.deps.clock.now(), this.deps.clock.timezone());
@@ -208,10 +206,16 @@ export class PlanImportService {
 
   /**
    * Commit the import. Re-runs the full validation first; if anything is
-   * invalid it returns a fail Result and writes NOTHING. On success it creates
-   * one new plan version per day via PlanService.createVersion (additive,
-   * effective-dated, audited) — preserving all previous versions and every
-   * Daily actual.
+   * invalid it returns a fail Result and writes NOTHING. On success it writes
+   * one new plan version per day — additive, effective-dated, audited —
+   * preserving all previous versions and every Daily actual.
+   *
+   * Performance: rows are written with a SINGLE bulk insert (+ one batched
+   * audit append), not one round-trip per day, so a 140-day plan imports in a
+   * couple of statements. Because create-mode rejects active conflicts and
+   * replace-mode clears the imported dates first, no imported date has an active
+   * version at write time — so records are built directly (no per-row supersede)
+   * and resolvePlanForDate still finds exactly one authoritative version per day.
    */
   async commit(ctx: UserContext, csvText: string, mode: ImportMode = 'create'): Promise<Result<ImportResult>> {
     const pv = await this.preview(ctx, csvText);
@@ -241,30 +245,56 @@ export class PlanImportService {
       await this.deps.plans.deleteByPlanDates(ctx.userId, sorted.map((m) => m.planDate));
     }
 
+    // Next version number per date (fresh dates => 1; any leftover inactive
+    // versions are respected). One range read, not one per day.
+    const start = sorted[0]!.planDate;
+    const end = sorted[sorted.length - 1]!.planDate;
+    const existing = await this.deps.plans.listByPlanDateRange(ctx.userId, start, end);
+    const maxVersion = new Map<LocalDate, number>();
+    for (const e of existing) maxVersion.set(e.planDate, Math.max(maxVersion.get(e.planDate) ?? 0, e.version));
+
+    const nowIso = this.deps.clock.now().toISOString();
     const label = preview.planLabel ?? 'imported plan';
-    let created = 0;
+    const records: PlanVersion[] = [];
+    const audit: AuditEntry[] = [];
     let sessionCount = 0;
+
     for (const m of sorted) {
-      const res = await this.plans.createVersion(ctx, {
-        planDate: m.planDate,
-        // effectiveFrom defaults to planDate; each daily version resolves only
-        // for its own date. FUTURE-only is already guaranteed by validation.
-        fields: m.fields,
-        reason: `plan import (${label})`,
+      const v = validatePlanFields(m.fields);
+      if (!v.ok) return fail('IMPORT_INVALID', `field validation failed for ${m.planDate}`, { errors: v.errors });
+      const n = v.normalized;
+      const id = this.deps.ids.newId();
+      records.push({
+        id, userId: ctx.userId, planDate: m.planDate,
+        version: (maxVersion.get(m.planDate) ?? 0) + 1,
+        phase: (n.phase as string | null) ?? null,
+        runPlan: (n.runPlan as string | null) ?? null,
+        longRunPlan: (n.longRunPlan as string | null) ?? null,
+        qualityPlan: (n.qualityPlan as string | null) ?? null,
+        gymPlan: (n.gymPlan as string | null) ?? null,
+        recoveryPlan: (n.recoveryPlan as string | null) ?? null,
+        mileageTarget: (n.mileageTarget as number | null) ?? null,
+        bodyCompositionTarget: (n.bodyCompositionTarget as string | null) ?? null,
+        milestone: (n.milestone as string | null) ?? null,
+        weekNumber: (n.weekNumber as number | null) ?? null,
+        effectiveFrom: m.planDate, effectiveTo: null, isActive: true,
+        createdAt: nowIso, updatedAt: nowIso,
       });
-      if (!res.ok) {
-        // Should be unreachable after validation; surface honestly, don't guess.
-        return fail('IMPORT_INVALID', `write failed for ${m.planDate} after validation`, { date: m.planDate, cause: res.error });
-      }
-      created += 1;
+      audit.push({
+        id: this.deps.ids.newId(), userId: ctx.userId, timestamp: nowIso,
+        entityType: 'Plan', entityId: id, action: 'CREATE_PLAN_VERSION',
+        fieldChanged: 'import', oldValue: '', newValue: `${m.planDate} ${m.summary}`,
+        actor: ctx.actor, reason: `plan import (${label}, ${mode})`,
+      });
       if (m.slot === 'runPlan' || m.slot === 'longRunPlan' || m.slot === 'qualityPlan' || m.slot === 'gymPlan') sessionCount += 1;
     }
 
-    const start = sorted[0]!.planDate;
-    const end = sorted[sorted.length - 1]!.planDate;
+    await this.deps.plans.insertMany(records);
+    await this.deps.audit.append(audit);
+
     return ok({
       planLabel: preview.planLabel,
-      versionsCreated: created,
+      versionsCreated: records.length,
       dateRange: { start, end },
       weekCount: preview.weekCount,
       sessionCount,

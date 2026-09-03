@@ -75,6 +75,7 @@ export class InMemoryPlanRepository implements PlanRepository {
     );
   }
   async insert(version: PlanVersion): Promise<PlanVersion> { this.records.push(version); return version; }
+  async insertMany(versions: readonly PlanVersion[]): Promise<void> { this.records.push(...versions); }
   async update(version: PlanVersion): Promise<PlanVersion> {
     const i = this.records.findIndex((r) => r.id === version.id);
     if (i === -1) throw new Error(`plan update: id not found ${version.id}`);
