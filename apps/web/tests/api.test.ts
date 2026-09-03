@@ -16,7 +16,11 @@ beforeEach(async () => {
   const t = await createTestDatabase();
   db = t.db;
   const deps = createPgDependencies(db);
-  env = { deps, allowedEmail: ALLOWED, getUserId: (e) => getOrCreateUserByEmail(db, e) };
+  env = {
+    deps, allowedEmail: ALLOWED, getUserId: (e) => getOrCreateUserByEmail(db, e),
+    // Exercise the atomic commit path (real pglite transaction).
+    withTransaction: (fn) => db.transaction((tx) => fn(createPgDependencies(tx as unknown as Parameters<typeof createPgDependencies>[0]))),
+  };
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -244,6 +248,22 @@ describe('M07-D — API handlers', () => {
     const envB: Env = { ...env, allowedEmail: other.email };
     const ov = await H.planOverview(envB, { session: other });
     expect(body(ov).data.hasPlan).toBe(false);
+  });
+
+  it('T28 duplicate create-import -> 409 conflict; REPLACE overwrites (atomic, no duplicates)', async () => {
+    await H.importPlanCommit(env, { session: valid, body: { csv: impCsv() } });
+    // Same file again in create mode is refused.
+    const dup = await H.importPlanCommit(env, { session: valid, body: { csv: impCsv() } });
+    expect(dup.status).toBe(409);
+    expect(body(dup).error.code).toBe('IMPORT_CONFLICT');
+    // Replace mode succeeds and does not duplicate.
+    const rep = await H.importPlanCommit(env, { session: valid, body: { csv: impCsv(), mode: 'replace' } });
+    expect(rep.status).toBe(200);
+    expect(body(rep).data.versionsCreated).toBe(3);
+    const ov = await H.planOverview(env, { session: valid });
+    expect(body(ov).data.totalWeeks).toBe(1);
+    const p = await H.plan(env, { session: valid, query: { date: fut(3) } });
+    expect(p.status).toBe(200); // still exactly one active version per date
   });
 
   it('T17 no DB internals leak; 404 mapping; safe error shape', async () => {

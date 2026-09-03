@@ -102,6 +102,7 @@ export interface ImportPreview {
   planLabel: string | null;
   errors: { line: number; field: string; message: string }[];
   warnings: string[];
+  conflicts: string[];
   rows: ImportPreviewRow[];
 }
 export interface ImportResult {
@@ -163,8 +164,8 @@ export const api = {
   plan: (date?: string) => cached<PlanView>('plan', req<PlanView>(`/api/plan${date ? `?date=${encodeURIComponent(date)}` : ''}`)),
   planOverview: () => cached<PlanOverview>('planOverview', req<PlanOverview>('/api/plan/overview')),
   importPreview: (csv: string) => post('/api/plan/import/preview', { csv }) as Promise<ApiEnvelope<ImportPreview>>,
-  importCommit: async (csv: string) => {
-    const r = (await post('/api/plan/import/commit', { csv })) as ApiEnvelope<ImportResult>;
+  importCommit: async (csv: string, mode: 'create' | 'replace' = 'create') => {
+    const r = (await post('/api/plan/import/commit', { csv, mode })) as ApiEnvelope<ImportResult>;
     if (r.ok) resourceCache.invalidate('plan', 'planOverview', 'today', 'weekly');
     return r;
   },

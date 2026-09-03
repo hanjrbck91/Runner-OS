@@ -31,13 +31,19 @@ export function getEnv(): Env {
   if (!allowedEmail) throw new Error('AUTH_ALLOWED_EMAIL is not configured');
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not configured');
 
-  const db = getAuthDb() as unknown as Parameters<typeof createPgDependencies>[0];
-  const deps = createPgDependencies(db, { timezone: process.env.USER_TIMEZONE ?? 'Asia/Kolkata' });
+  const tz = process.env.USER_TIMEZONE ?? 'Asia/Kolkata';
+  const rawDb = getAuthDb();
+  const db = rawDb as unknown as Parameters<typeof createPgDependencies>[0];
+  const deps = createPgDependencies(db, { timezone: tz });
 
   cached = {
     deps,
     allowedEmail,
     getUserId: (email: string) => getOrCreateUserByEmail(db, email),
+    // Run a unit of work in ONE Postgres transaction (used by plan-import commit
+    // for atomic all-or-nothing writes).
+    withTransaction: <T>(fn: (d: typeof deps) => Promise<T>): Promise<T> =>
+      rawDb.transaction((tx) => fn(createPgDependencies(tx as unknown as Parameters<typeof createPgDependencies>[0], { timezone: tz }))),
   };
   return cached;
 }

@@ -43,10 +43,15 @@ export interface ImportPreview {
   readonly phaseDistribution: ReadonlyArray<{ readonly phase: string; readonly count: number }>;
   readonly sessionDistribution: ReadonlyArray<{ readonly type: string; readonly count: number }>;
   readonly planLabel: string | null;
-  readonly errors: readonly RowError[];   // blocking
+  readonly errors: readonly RowError[];   // blocking data problems
   readonly warnings: readonly string[];   // non-blocking notes
+  /** Dates that already have an active plan version. NON-blocking: a create-mode
+   *  commit refuses them; a replace-mode commit overwrites them. */
+  readonly conflicts: readonly LocalDate[];
   readonly rows: ReadonlyArray<PreviewRow>;
 }
+
+export type ImportMode = 'create' | 'replace';
 
 export interface PreviewRow {
   readonly date: LocalDate;
@@ -138,24 +143,30 @@ export class PlanImportService {
       }
     }
 
-    // Idempotency / duplicate protection: reject dates that already have an
-    // active plan version (a fresh re-import of the same CSV lands here).
+    // Idempotency / duplicate protection: detect dates that already have an
+    // active plan version. NON-blocking — surfaced as conflicts + a warning so
+    // the UI can offer REPLACE. A create-mode commit still refuses them.
+    let conflicts: LocalDate[] = [];
     if (mapped.length > 0 && errors.length === 0) {
-      const start = mapped.reduce((a, m) => (compareDate(m.planDate, a) < 0 ? m.planDate : a), mapped[0]!.planDate);
-      const end = mapped.reduce((a, m) => (compareDate(m.planDate, a) > 0 ? m.planDate : a), mapped[0]!.planDate);
-      const existing = await this.deps.plans.listByPlanDateRange(ctx.userId, start, end);
-      const activeDates = new Set(existing.filter((e) => e.isActive).map((e) => e.planDate));
-      const conflicts = mapped.filter((m) => activeDates.has(m.planDate)).map((m) => m.planDate);
+      conflicts = await this.findConflicts(ctx, mapped);
       if (conflicts.length > 0) {
-        errors.push({ line: 0, field: 'date', message: `${conflicts.length} date(s) already have an active plan version — import rejected to avoid duplicates (e.g. ${conflicts.slice(0, 3).join(', ')})` });
+        warnings.push(`${conflicts.length} date(s) already have an active plan version (e.g. ${conflicts.slice(0, 3).join(', ')}). Use REPLACE to overwrite them, or these will be rejected.`);
       }
     }
 
-    const preview = this.buildPreview(mapped, errors, warnings);
+    const preview = this.buildPreview(mapped, errors, warnings, conflicts);
     return ok(preview);
   }
 
-  private buildPreview(mapped: MappedPlanRow[], errors: RowError[], warnings: string[]): ImportPreview {
+  private async findConflicts(ctx: UserContext, mapped: MappedPlanRow[]): Promise<LocalDate[]> {
+    const start = mapped.reduce((a, m) => (compareDate(m.planDate, a) < 0 ? m.planDate : a), mapped[0]!.planDate);
+    const end = mapped.reduce((a, m) => (compareDate(m.planDate, a) > 0 ? m.planDate : a), mapped[0]!.planDate);
+    const existing = await this.deps.plans.listByPlanDateRange(ctx.userId, start, end);
+    const activeDates = new Set(existing.filter((e) => e.isActive).map((e) => e.planDate));
+    return mapped.filter((m) => activeDates.has(m.planDate)).map((m) => m.planDate);
+  }
+
+  private buildPreview(mapped: MappedPlanRow[], errors: RowError[], warnings: string[], conflicts: readonly LocalDate[]): ImportPreview {
     const sorted = [...mapped].sort((a, b) => compareDate(a.planDate, b.planDate));
     const byWeek = new Map<number, WeekSummary>();
     const phaseCount = new Map<string, number>();
@@ -190,6 +201,7 @@ export class PlanImportService {
       planLabel: labels.size === 1 ? [...labels][0]! : (labels.size > 1 ? [...labels].join(', ') : null),
       errors,
       warnings,
+      conflicts: [...conflicts],
       rows: sorted.map(previewRow),
     };
   }
@@ -201,12 +213,16 @@ export class PlanImportService {
    * effective-dated, audited) — preserving all previous versions and every
    * Daily actual.
    */
-  async commit(ctx: UserContext, csvText: string): Promise<Result<ImportResult>> {
+  async commit(ctx: UserContext, csvText: string, mode: ImportMode = 'create'): Promise<Result<ImportResult>> {
     const pv = await this.preview(ctx, csvText);
     if (!pv.ok) return pv;
     const preview = pv.data;
     if (!preview.valid) {
       return fail('IMPORT_INVALID', 'import has validation errors; nothing was written', { errors: preview.errors });
+    }
+    // Create mode never silently overwrites; replace mode is an explicit choice.
+    if (preview.conflicts.length > 0 && mode !== 'replace') {
+      return fail('IMPORT_CONFLICT', `${preview.conflicts.length} date(s) already have an active plan version; re-run with REPLACE to overwrite`, { conflicts: preview.conflicts });
     }
 
     // Re-derive the mapped rows deterministically (preview proved them valid).
@@ -217,6 +233,13 @@ export class PlanImportService {
       if (r.ok) mapped.push(r.row);
     }
     const sorted = [...mapped].sort((a, b) => compareDate(a.planDate, b.planDate));
+
+    // REPLACE: clear any existing plan versions on the imported dates first, so a
+    // prior (possibly partial) import is fully overwritten. When the caller runs
+    // this inside a transaction, the clear + rewrite are atomic (all or nothing).
+    if (mode === 'replace') {
+      await this.deps.plans.deleteByPlanDates(ctx.userId, sorted.map((m) => m.planDate));
+    }
 
     const label = preview.planLabel ?? 'imported plan';
     let created = 0;

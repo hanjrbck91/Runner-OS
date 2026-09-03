@@ -20,7 +20,17 @@ import { mapPresentFields } from './fields.js';
 
 export interface Env extends AuthEnv {
   readonly deps: CoreDependencies;
+  /**
+   * Optional atomic-work runner. When present (production Postgres, pglite
+   * tests), the plan-import commit runs inside a single DB transaction so a
+   * partial write can never persist — a mid-import failure or client refresh
+   * rolls back completely. When absent, callers use `deps` directly.
+   */
+  readonly withTransaction?: <T>(fn: (deps: CoreDependencies) => Promise<T>) => Promise<T>;
 }
+
+/** Sentinel used to roll a transaction back while carrying the domain Result out. */
+class Rollback<T> { constructor(readonly result: T) {} }
 
 interface Req {
   readonly session: SessionInfo | null;
@@ -172,8 +182,26 @@ export function importPlanCommit(env: Env, req: Req): Promise<ApiResult> {
   return guard(env, req.session, async (ctx) => {
     const parsed = readCsvBody(req.body);
     if (!parsed.ok) return parsed.res;
-    const svc = createServices(env.deps);
-    return fromResult(await svc.planImport.commit(ctx, parsed.csv));
+    const mode = asObject(req.body)['mode'] === 'replace' ? 'replace' as const : 'create' as const;
+    const run = async (deps: CoreDependencies): Promise<Result<unknown>> =>
+      (await createServices(deps).planImport.commit(ctx, parsed.csv, mode)) as Result<unknown>;
+
+    // Atomic when a transaction runner exists: a non-ok Result throws Rollback to
+    // undo any partial writes, then is returned as the HTTP response.
+    if (env.withTransaction) {
+      try {
+        const r = await env.withTransaction(async (txDeps) => {
+          const res = await run(txDeps);
+          if (!res.ok) throw new Rollback(res);
+          return res;
+        });
+        return fromResult(r);
+      } catch (e) {
+        if (e instanceof Rollback) return fromResult(e.result as Result<unknown>);
+        throw e; // real infra fault -> guard() maps to 500 (nothing committed)
+      }
+    }
+    return fromResult(await run(env.deps));
   });
 }
 

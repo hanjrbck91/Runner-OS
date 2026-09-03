@@ -81,6 +81,15 @@ export class InMemoryPlanRepository implements PlanRepository {
     this.records[i] = version;
     return version;
   }
+  async deleteByPlanDates(userId: string, dates: readonly LocalDate[]): Promise<number> {
+    const set = new Set(dates);
+    let removed = 0;
+    for (let i = this.records.length - 1; i >= 0; i -= 1) {
+      const r = this.records[i]!;
+      if (r.userId === userId && set.has(r.planDate)) { this.records.splice(i, 1); removed += 1; }
+    }
+    return removed;
+  }
 }
 
 export class InMemoryAuditRepository implements AuditRepository {

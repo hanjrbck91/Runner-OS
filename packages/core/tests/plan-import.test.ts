@@ -146,15 +146,43 @@ describe('MC-025 — plan import', () => {
     expect(ov.hasPlan).toBe(false);
   });
 
-  it('duplicate/repeated import is rejected (no silent duplication)', async () => {
+  it('duplicate import: create-mode is refused (no silent duplication)', async () => {
     await unwrap(svc.planImport.commit(ctx, good));
     const count = deps.plans.records.length;
     const pv = await unwrap(svc.planImport.preview(ctx, good)); // same file again
-    expect(pv.valid).toBe(false);
-    expect(pv.errors.some((e) => e.message.includes('already have an active plan version'))).toBe(true);
-    const r = await svc.planImport.commit(ctx, good);
+    expect(pv.valid).toBe(true); // data is valid; conflict is non-blocking
+    expect(pv.conflicts.length).toBe(4);
+    expect(pv.warnings.some((w) => w.includes('REPLACE'))).toBe(true);
+    const r = await svc.planImport.commit(ctx, good); // default create mode
     expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.code).toBe('IMPORT_CONFLICT');
     expect(deps.plans.records.length).toBe(count); // nothing added
+  });
+
+  it('REPLACE mode overwrites existing dates without duplicating', async () => {
+    await unwrap(svc.planImport.commit(ctx, good));
+    expect(deps.plans.records.length).toBe(4);
+    const res = await unwrap(svc.planImport.commit(ctx, good, 'replace'));
+    expect(res.versionsCreated).toBe(4);
+    expect(deps.plans.records.length).toBe(4); // replaced, not doubled
+    // Every imported date still resolves to exactly one active version.
+    const versions = await deps.plans.listByPlanDate(ctx.userId, '2026-09-08');
+    expect(versions.filter((v) => v.isActive).length).toBe(1);
+    expect(resolvePlanForDate(versions, '2026-09-08').status).toBe('FOUND');
+  });
+
+  it('REPLACE recovers from a PARTIAL import (interrupted commit leftovers)', async () => {
+    // Simulate a partial import: only the first two dates got written.
+    await unwrap(svc.plans.createVersion(ctx, { planDate: '2026-09-07', fields: { recoveryPlan: 'Rest', weekNumber: 1 } }));
+    await unwrap(svc.plans.createVersion(ctx, { planDate: '2026-09-08', fields: { runPlan: 'Easy', weekNumber: 1 } }));
+    expect(deps.plans.records.length).toBe(2);
+    // create-mode is blocked by the leftovers...
+    const blocked = await svc.planImport.commit(ctx, good);
+    expect(blocked.ok).toBe(false);
+    // ...replace-mode cleans up and installs the full plan.
+    const res = await unwrap(svc.planImport.commit(ctx, good, 'replace'));
+    expect(res.versionsCreated).toBe(4);
+    expect(deps.plans.records.length).toBe(4);
   });
 
   it('plan overview after import reports week/phase/progress', async () => {

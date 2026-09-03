@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, type ImportPreview, type ImportResult, type PlanOverview } from '../../../lib/api.js';
 import { useResource } from '../../../lib/useApi.js';
 import { Loading, ErrorBanner, KV, Panel, Banner } from '../../../components/ui.js';
@@ -66,7 +66,18 @@ function ImportFlow({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [committing, setCommitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // While a commit is in flight, warn before the tab is closed/refreshed. The
+  // write is atomic server-side, so a refusal just means "wait"; a refresh will
+  // NOT half-apply the plan — but we still discourage interrupting.
+  useEffect(() => {
+    if (!committing) return;
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [committing]);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     setErr(null); setPreview(null); setResult(null);
@@ -82,11 +93,11 @@ function ImportFlow({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
     else setErr(r.error.message);
   }
 
-  async function confirm() {
+  async function confirm(mode: 'create' | 'replace') {
     if (!csv || busy) return;
-    setBusy(true); setErr(null);
-    const r = await api.importCommit(csv);
-    setBusy(false);
+    setBusy(true); setCommitting(true); setErr(null);
+    const r = await api.importCommit(csv, mode);
+    setBusy(false); setCommitting(false);
     if (r.ok) setResult(r.data);
     else setErr(r.error.message);
   }
@@ -156,11 +167,26 @@ function ImportFlow({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
             </table>
           </div>
 
+          {preview.conflicts.length > 0 ? (
+            <Banner kind="err">
+              {preview.conflicts.length} date(s) already have a plan (e.g. {preview.conflicts.slice(0, 3).join(', ')}).
+              This can happen if a previous import was interrupted. Use REPLACE to overwrite them.
+            </Banner>
+          ) : null}
+
+          {committing ? <Banner kind="ok">IMPORTING — please wait, do not close or refresh this tab.</Banner> : null}
+
           <div className="row" style={{ marginTop: 12 }}>
             <button onClick={onCancel} disabled={busy}>CANCEL</button>
-            <button className="primary" data-action="confirm-import" onClick={confirm} disabled={busy || !preview.valid}>
-              {busy ? 'IMPORTING…' : 'CONFIRM IMPORT'}
-            </button>
+            {preview.conflicts.length > 0 ? (
+              <button className="primary" data-action="replace-import" onClick={() => confirm('replace')} disabled={busy || !preview.valid}>
+                {busy ? 'IMPORTING…' : 'REPLACE & IMPORT'}
+              </button>
+            ) : (
+              <button className="primary" data-action="confirm-import" onClick={() => confirm('create')} disabled={busy || !preview.valid}>
+                {busy ? 'IMPORTING…' : 'CONFIRM IMPORT'}
+              </button>
+            )}
           </div>
         </div>
       ) : (

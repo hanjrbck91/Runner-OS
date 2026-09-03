@@ -126,6 +126,15 @@ export class PlanRepositoryPg implements PlanRepository {
     if (!r[0]) throw new Error(`plan update: id not found ${v.id}`);
     return mapPlan(r[0]);
   }
+  async deleteByPlanDates(userId: string, dates: readonly LocalDate[]): Promise<number> {
+    if (dates.length === 0) return 0;
+    const list = sql.join(dates.map((d) => sql`${d}`), sql`, `);
+    const r = await rows(this.db, sql`
+      delete from plan_versions
+      where user_id=${userId} and plan_date in (${list})
+      returning id`);
+    return r.length;
+  }
 }
 
 export class AuditRepositoryPg implements AuditRepository {

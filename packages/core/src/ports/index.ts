@@ -49,6 +49,13 @@ export interface PlanRepository {
   listByPlanDateRange(userId: string, start: LocalDate, end: LocalDate): Promise<PlanVersion[]>;
   insert(version: PlanVersion): Promise<PlanVersion>;
   update(version: PlanVersion): Promise<PlanVersion>;
+  /**
+   * Hard-delete every plan version whose planDate is in `dates` for this user.
+   * Used by the plan importer's REPLACE mode to clear a prior (possibly partial)
+   * import before rewriting. Returns the number of rows removed. Only ever
+   * called for FUTURE plan dates, which carry no Daily snapshots.
+   */
+  deleteByPlanDates(userId: string, dates: readonly LocalDate[]): Promise<number>;
 }
 
 export interface AuditRepository {
