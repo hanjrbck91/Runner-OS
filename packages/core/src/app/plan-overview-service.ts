@@ -34,7 +34,9 @@ export interface PlanWeek {
   readonly start: LocalDate;
   readonly end: LocalDate;
   readonly plannedKm: number;
+  readonly actualKm: number;          // logged run km within the week
   readonly sessions: number;          // tracked run/gym days (not rest)
+  readonly completedSessions: number; // tracked days actually done
   readonly status: 'DONE' | 'CURRENT' | 'UPCOMING';
   readonly days: readonly PlanDay[];
 }
@@ -52,6 +54,7 @@ export interface PlanOverview {
   readonly completedWeeks: number;
   readonly remainingWeeks: number;
   readonly startsInDays: number | null;   // >0 when the plan hasn't started yet
+  readonly daysToRace: number | null;      // days from today to the last plan date (race)
   readonly dateRange: { readonly start: LocalDate; readonly end: LocalDate } | null;
   readonly upcoming: readonly UpcomingSession[];
   readonly weeks: readonly PlanWeek[];
@@ -147,21 +150,24 @@ export class PlanOverviewService {
     const remainingWeeks = currentWeek !== null ? Math.max(0, totalWeeks - currentWeek) : totalWeeks;
     const plannedTotalKm = round2([...weekMap.values()].reduce((a, w) => a + w.kms, 0));
 
-    // Actuals in the elapsed portion of the plan -> completed KM + completion %.
+    // Load every logged day across the whole plan span once (for per-week actual
+    // + overall completed KM / completion %).
+    const allDaily = await this.deps.daily.listActiveInRange(ctx.userId, start, end);
+    const dailyByDate = new Map<LocalDate, DailyRecord>();
+    for (const d of allDaily) dailyByDate.set(d.date, d);
+
     const started = compareDate(today, start) >= 0;
     let completedKm = 0;
     let completionPercentage: number | null = null;
     if (started) {
       const cappedEnd = compareDate(today, end) < 0 ? today : end;
-      const dailies = await this.deps.daily.listActiveInRange(ctx.userId, start, cappedEnd);
-      completedKm = round2(dailies.reduce((a, d) => a + (d.runActualKm ?? 0), 0));
-      const dailyByDate = new Map<LocalDate, DailyRecord>();
-      for (const d of dailies) dailyByDate.set(d.date, d);
+      completedKm = round2(allDaily.filter((d) => compareDate(d.date, cappedEnd) <= 0).reduce((a, d) => a + (d.runActualKm ?? 0), 0));
       const planByDate = new Map<LocalDate, PlanVersion[]>();
       for (const [d, vs] of byDate) planByDate.set(d, vs);
       const comp = computeCompletion(planByDate, dailyByDate, start, cappedEnd);
       if (comp.ok) completionPercentage = comp.completionPercentage;
     }
+    const daysToRace = compareDate(today, end) <= 0 ? daysBetween(today, end) : 0;
 
     // Upcoming tracked sessions from today forward (up to 6).
     const upcoming: UpcomingSession[] = [];
@@ -181,11 +187,24 @@ export class PlanOverviewService {
       .map(([weekNumber, w]) => {
         const ws = w.dates.slice().sort(compareDate);
         const status: PlanWeek['status'] = currentWeek === null
-          ? (startsInDays !== null ? 'UPCOMING' : 'UPCOMING')
+          ? 'UPCOMING'
           : weekNumber < currentWeek ? 'DONE' : weekNumber === currentWeek ? 'CURRENT' : 'UPCOMING';
+        // Per-week actual: logged run km + tracked sessions actually done.
+        let actualKm = 0;
+        let completedSessions = 0;
+        for (const day of w.days) {
+          const dd = dailyByDate.get(day.date);
+          if (!dd) continue;
+          actualKm += dd.runActualKm ?? 0;
+          const isRun = day.slot === 'run' || day.slot === 'long' || day.slot === 'quality';
+          const isGym = day.slot === 'gym';
+          if (isRun && (dd.runActualKm ?? 0) > 0) completedSessions += 1;
+          else if (isGym && dd.gymDone === true) completedSessions += 1;
+        }
         return {
           weekNumber, phase: w.phase, start: ws[0]!, end: ws[ws.length - 1]!,
-          plannedKm: round2(w.kms), sessions: w.tracked, status,
+          plannedKm: round2(w.kms), actualKm: round2(actualKm), sessions: w.tracked,
+          completedSessions, status,
           days: w.days.slice().sort((a, b) => compareDate(a.date, b.date)),
         };
       });
@@ -193,7 +212,7 @@ export class PlanOverviewService {
     return ok({
       hasPlan: true, today, totalWeeks, currentWeek, currentPhase, currentWeekPlannedKm,
       plannedTotalKm, completedKm, completionPercentage,
-      completedWeeks, remainingWeeks, startsInDays,
+      completedWeeks, remainingWeeks, startsInDays, daysToRace,
       dateRange: { start, end }, upcoming, weeks,
     });
   }
@@ -202,7 +221,7 @@ export class PlanOverviewService {
     return {
       hasPlan: false, today, totalWeeks: 0, currentWeek: null, currentPhase: null,
       currentWeekPlannedKm: null, plannedTotalKm: 0, completedKm: 0, completionPercentage: null,
-      completedWeeks: 0, remainingWeeks: 0, startsInDays: null, dateRange: null, upcoming: [], weeks: [],
+      completedWeeks: 0, remainingWeeks: 0, startsInDays: null, daysToRace: null, dateRange: null, upcoming: [], weeks: [],
     };
   }
 }

@@ -54,10 +54,12 @@ export class AggregationService {
     if (!comp.ok) return fail('PLAN_AMBIGUOUS', `ambiguous authoritative plan for ${comp.date}`, { date: comp.date, planIds: comp.planIds });
 
     const m = computeCoreMetrics(daily);
+    const plannedKm = planList.reduce((a, p) => a + (p.isActive ? (p.mileageTarget ?? 0) : 0), 0);
 
     return ok({
       weekId: weekKey(weekStart),
       weekStart, weekEnd,
+      totalPlannedKm: plannedKm > 0 ? Math.round(plannedKm * 100) / 100 : null,
       averageWeight: m.averageWeight,
       weightTrend: m.weightTrend,
       totalRunningKm: m.totalRunningKm,

@@ -133,6 +133,7 @@ export interface MonthlyMetrics {
 export interface WeeklyView extends WeeklyMetrics {
   readonly waist: number | null;
   readonly reflectionText: string | null;
+  readonly totalPlannedKm: number | null; // sum of plan mileage targets in the week
 }
 export interface MonthlyView extends MonthlyMetrics {
   readonly waistChange: number | null;

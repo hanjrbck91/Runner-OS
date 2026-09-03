@@ -232,12 +232,13 @@ function RunLogger({ daily, plan, onSaved, onDone }: { daily: DailyView | null; 
         </div>
         <div className="muted" style={{ marginTop: 4 }}>{pain != null ? `${pain} · ${PAIN_LABELS[pain]}` : 'No pain rating yet'}</div>
         {pain !== null && pain > 0 ? (
-          <>
+          <div className="attn-box" data-field="pain-detail">
+            <div className="tagrow"><span className="tag tag-response">INJURY</span></div>
             <label>PAIN LOCATION</label>
             <Chips value={painLoc} options={PAIN_LOCATIONS} onChange={setPainLoc} field="painLocation" />
             <label>PAIN TIMING</label>
             <Chips value={painTiming} options={PAIN_TIMINGS} onChange={setPainTiming} field="painTiming" />
-          </>
+          </div>
         ) : null}
         <label>RUN NOTE</label>
         <textarea value={note} onChange={(e) => setNote(e.target.value)} data-field="note" placeholder="Anything about the run…" />
@@ -372,6 +373,11 @@ function NoteLogger({ daily, onSaved, onDone }: { daily: DailyView | null; onSav
       <Panel>
         <div className="muted" style={{ marginBottom: 8 }}>Write what happened, in your own words.</div>
         <textarea value={note} onChange={(e) => setNote(e.target.value)} data-field="note" placeholder="Woke up with heavy calves. Easy 4 km felt fine…" style={{ minHeight: 140 }} />
+        {/* Attachment area — reserved so future TEXT + PHOTO + AUDIO attach here without redesign. */}
+        <div className="row" style={{ marginTop: 8 }}>
+          <button type="button" disabled title="Coming soon">+ PHOTO (SOON)</button>
+          <button type="button" disabled title="Coming soon">+ AUDIO (SOON)</button>
+        </div>
         <States status={status} error={error} />
         <div style={{ marginTop: 12 }}><SaveButton status={status} label="SAVE NOTE" /></div>
       </Panel>

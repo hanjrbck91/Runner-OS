@@ -3,7 +3,8 @@ import { useCallback, useState } from 'react';
 import { api } from '../../../lib/api.js';
 import { show, nutritionLabel } from '../../../lib/format.js';
 import { useResource } from '../../../lib/useApi.js';
-import { Loading, ErrorBanner, KV, Panel, Banner } from '../../../components/ui.js';
+import { fmtRange } from '../../../lib/format.js';
+import { Loading, ErrorBanner, KV, Panel, Banner, Dm, Leds } from '../../../components/ui.js';
 
 export default function WeekPage() {
   const loader = useCallback(() => api.weekly(), []);
@@ -34,19 +35,34 @@ export default function WeekPage() {
   return (
     <div>
       <Panel title="WEEK">
-        <div className="muted">{d.weekStart} → {d.weekEnd}</div>
-        <KV k="AVG WEIGHT" v={show(d.averageWeight, 'KG')} />
-        <KV k="WEIGHT TREND" v={show(d.weightTrend, 'KG')} />
-        <KV k="TOTAL KM" v={show(d.totalRunningKm)} />
-        <KV k="LONGEST" v={show(d.longestRun, 'KM')} />
-        <KV k="RUNS" v={show(d.numberOfRuns)} />
-        <KV k="GYM" v={show(d.numberOfGymSessions)} />
-        <KV k="AVG SLEEP" v={show(d.averageSleep, 'H')} />
-        <KV k="AVG RPE" v={show(d.averageRpe)} />
-        <KV k="PAIN FLAGS" v={show(d.painFlagCount)} />
-        <KV k="NUTRITION" v={nutritionLabel(d.nutritionAdherence)} />
-        <KV k="COMPLETION" v={show(d.completionPercentage, '%')} />
-        <KV k="MISSED" v={show(d.missedSessions)} />
+        <div className="muted" style={{ marginBottom: 8 }}>{fmtRange(d.weekStart, d.weekEnd)}</div>
+
+        {/* Planned vs actual KM — the core coaching question. */}
+        <div className="tagrow"><span className="tag tag-planned">PLANNED</span><Dm>{d.totalPlannedKm ?? '—'}</Dm><span className="muted">km</span>
+          <span className="tag tag-actual" style={{ marginLeft: 8 }}>ACTUAL</span><Dm tone="green">{d.totalRunningKm}</Dm><span className="muted">km</span></div>
+        {d.totalPlannedKm && d.totalPlannedKm > 0 ? (
+          <div className="wkbar"><span className="lab">KM</span><span className="track"><i style={{ width: `${Math.min(100, Math.round((d.totalRunningKm / d.totalPlannedKm) * 100))}%` }} /></span><span className="val">{Math.round((d.totalRunningKm / d.totalPlannedKm) * 100)}%</span></div>
+        ) : null}
+
+        {d.completionPercentage !== null ? (
+          <>
+            <label>COMPLETION</label>
+            <Leds filled={Math.round((d.completionPercentage / 100) * 7)} total={7} />
+            <div className="muted">{d.completionPercentage}% · {d.missedSessions} missed</div>
+          </>
+        ) : null}
+
+        <div style={{ marginTop: 8 }}>
+          <KV k="LONGEST" v={<Dm>{d.longestRun ?? '—'}</Dm>} />
+          <KV k="RUNS" v={<Dm>{d.numberOfRuns}</Dm>} />
+          <KV k="GYM" v={<Dm>{d.numberOfGymSessions}</Dm>} />
+          <KV k="AVG WEIGHT" v={<Dm>{show(d.averageWeight)}</Dm>} />
+          <KV k="WEIGHT TREND" v={show(d.weightTrend, 'KG')} />
+          <KV k="AVG SLEEP" v={<Dm>{show(d.averageSleep)}</Dm>} />
+          <KV k="AVG RPE" v={<Dm>{show(d.averageRpe)}</Dm>} />
+          <KV k="PAIN FLAGS" v={d.painFlagCount > 0 ? <span className="amber">● <Dm tone="amber">{d.painFlagCount}</Dm></span> : <Dm>0</Dm>} />
+          <KV k="NUTRITION" v={nutritionLabel(d.nutritionAdherence)} />
+        </div>
       </Panel>
       {d.reflectionText ? <Panel title="REFLECTION"><div className="lcd">{d.reflectionText}</div></Panel> : null}
       <Panel title="COACH EXPORT">

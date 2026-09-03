@@ -209,6 +209,10 @@ describe('MC-025 — plan import', () => {
     const ov = await unwrap(svc.planOverview.getOverview(ctx, '2026-09-08'));
     expect(ov.completedKm).toBe(7);
     expect(ov.completionPercentage).not.toBeNull();
+    expect(ov.daysToRace).not.toBeNull();          // MC-028 race countdown
+    const w1 = ov.weeks.find((w) => w.weekNumber === 1)!;
+    expect(w1.actualKm).toBe(7);                    // per-week actual km
+    expect(w1.completedSessions).toBe(1);
   });
 
   it('accepts the real 20-week TMM 3:30 constructed CSV (contract check)', async () => {

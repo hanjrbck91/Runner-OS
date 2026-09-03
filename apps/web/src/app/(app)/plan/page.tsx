@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, type ImportPreview, type ImportResult, type PlanOverview, type PlanWeek } from '../../../lib/api.js';
 import { useResource } from '../../../lib/useApi.js';
 import { fmtDate, fmtRange } from '../../../lib/format.js';
-import { Loading, ErrorBanner, KV, Panel, Banner } from '../../../components/ui.js';
+import { Loading, ErrorBanner, KV, Panel, Banner, Leds, Dm } from '../../../components/ui.js';
 
 export default function PlanPage() {
   const loader = useCallback(() => api.planOverview(), []);
@@ -31,38 +31,57 @@ export default function PlanPage() {
   );
 }
 
+function phaseTimeline(weeks: PlanWeek[], currentWeek: number | null): { phase: string; cur: boolean; done: boolean }[] {
+  const seq: { phase: string; from: number }[] = [];
+  for (const w of weeks) {
+    const p = w.phase ?? '—';
+    if (seq.length === 0 || seq[seq.length - 1]!.phase !== p) seq.push({ phase: p, from: w.weekNumber });
+  }
+  const cw = currentWeek ?? 0;
+  return seq.map((s, i) => {
+    const next = seq[i + 1]?.from ?? Infinity;
+    return { phase: s.phase, cur: cw >= s.from && cw < next, done: cw >= next };
+  });
+}
+
 function Overview({ d }: { d: PlanOverview }) {
   if (!d.hasPlan) {
-    return <Panel title="PLAN"><div className="muted center">NO PLAN IMPORTED YET</div></Panel>;
+    return <Panel title="PLAN"><div className="muted center">NO PLAN IMPORTED YET</div><div className="muted center" style={{ marginTop: 6, fontSize: 12 }}>Import a coach CSV below.</div></Panel>;
   }
-  const cw = d.currentWeek ?? 0;
-  // Progress along the 20 weeks: completed weeks / total (weeks-based, always meaningful).
-  const weekPct = d.totalWeeks > 0 ? Math.min(100, Math.round((d.completedWeeks / d.totalWeeks) * 100)) : 0;
+  const phases = phaseTimeline(d.weeks, d.currentWeek);
+  const started = d.currentWeek !== null;
   return (
     <div>
       <Panel title="PLAN PROGRESS">
-        <div className="big">{d.currentWeek !== null ? `WEEK ${cw} / ${d.totalWeeks}` : `STARTS IN ${d.startsInDays ?? '—'}D`}</div>
-        <div className="prog"><i style={{ width: `${weekPct}%` }} /></div>
-        <div className="muted" style={{ marginBottom: 6 }}>{d.completedWeeks} of {d.totalWeeks} weeks done</div>
+        <div className="big">{started ? <>WEEK <Dm>{d.currentWeek}</Dm> / {d.totalWeeks}</> : <>STARTS IN <Dm>{d.startsInDays ?? '—'}</Dm> D</>}</div>
+        {/* 20-segment LED journey — one segment per week. */}
+        <Leds filled={d.completedWeeks} total={d.totalWeeks} />
+        <div className="muted" style={{ marginBottom: 8 }}>{d.completedWeeks} of {d.totalWeeks} weeks done · {d.remainingWeeks} remaining</div>
+
+        <div className="phasebar">
+          {phases.map((p) => (
+            <div key={p.phase} className={p.cur ? 'cur' : p.done ? 'done' : ''} title={p.phase}>{p.phase.split(/[\s/]/)[0]}</div>
+          ))}
+        </div>
+
         <KV k="PHASE" v={d.currentPhase ?? '—'} />
-        <KV k="THIS WEEK KM" v={d.currentWeekPlannedKm !== null ? `${d.currentWeekPlannedKm} KM` : '—'} />
-        <KV k="PLANNED KM" v={`${d.plannedTotalKm} KM`} />
+        <KV k="THIS WEEK KM" v={<Dm tone="green">{d.currentWeekPlannedKm ?? '—'}</Dm>} />
+        {d.daysToRace !== null ? <KV k="RACE IN" v={<><Dm tone="amber">{d.daysToRace}</Dm> <span className="muted">DAYS</span></>} /> : null}
+        <KV k="PLANNED KM" v={<Dm>{d.plannedTotalKm}</Dm>} />
         {d.completionPercentage !== null ? (
           <>
-            <KV k="COMPLETED KM" v={`${d.completedKm} KM`} />
-            <KV k="COMPLETION" v={`${d.completionPercentage}%`} />
+            <KV k="COMPLETED KM" v={<Dm tone="green">{d.completedKm}</Dm>} />
+            <KV k="COMPLETION" v={<Dm>{d.completionPercentage}%</Dm>} />
           </>
         ) : null}
-        <KV k="COMPLETED" v={`${d.completedWeeks} WK`} />
-        <KV k="REMAINING" v={`${d.remainingWeeks} WK`} />
         {d.dateRange ? <KV k="RANGE" v={fmtRange(d.dateRange.start, d.dateRange.end)} /> : null}
       </Panel>
 
       <Panel title="UPCOMING">
-        {d.upcoming.length === 0 ? <div className="muted">No upcoming sessions.</div> : d.upcoming.map((u) => (
+        {d.upcoming.length === 0 ? <div className="muted">RECOVERY MODE · no upcoming sessions.</div> : d.upcoming.map((u) => (
           <div className="up" key={u.date}>
             <span className="d">{fmtDate(u.date)}{u.weekNumber ? ` · W${u.weekNumber}` : ''}</span>
-            <span className="s">{u.session}{u.plannedKm !== null ? ` (${u.plannedKm}km)` : ''}</span>
+            <span className="s">{u.session}{u.plannedKm !== null ? <> · <Dm tone="green">{u.plannedKm}</Dm>km</> : null}</span>
           </div>
         ))}
       </Panel>
@@ -77,18 +96,22 @@ function Overview({ d }: { d: PlanOverview }) {
 
 function WeekRow({ w }: { w: PlanWeek }) {
   const tag = w.status === 'CURRENT' ? 'NOW' : w.status === 'DONE' ? '✓' : '';
+  const showActual = w.status !== 'UPCOMING' && (w.actualKm > 0 || w.completedSessions > 0);
   return (
     <details className={`wk wk-${w.status.toLowerCase()}`} open={w.status === 'CURRENT'}>
       <summary>
         <span className="wk-h">W{w.weekNumber}{tag ? ` ${tag}` : ''}</span>
         <span className="wk-ph">{w.phase ?? '—'}</span>
-        <span className="wk-km">{w.plannedKm}km</span>
+        <span className="wk-km">{w.plannedKm}</span>
       </summary>
-      <div className="muted" style={{ margin: '4px 0 6px' }}>{fmtRange(w.start, w.end)} · {w.sessions} sessions</div>
+      <div className="muted" style={{ margin: '4px 0 6px' }}>
+        {fmtRange(w.start, w.end)} · {w.sessions} sessions
+        {showActual ? <> · actual <span className="dm green" style={{ fontSize: '1em' }}>{w.actualKm}</span>km · {w.completedSessions}/{w.sessions} done</> : null}
+      </div>
       {w.days.map((day) => (
         <div className="up" key={day.date}>
           <span className="d">{fmtDate(day.date)}</span>
-          <span className="s">{day.session}{day.plannedKm !== null ? ` (${day.plannedKm}km)` : ''}</span>
+          <span className="s">{day.session}{day.plannedKm !== null ? <> · <Dm tone="green">{day.plannedKm}</Dm>km</> : null}</span>
         </div>
       ))}
     </details>
@@ -197,19 +220,15 @@ function ImportFlow({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
           <label style={{ marginTop: 10 }}>PHASES</label>
           {preview.phaseDistribution.map((p) => <KV key={p.phase} k={p.phase} v={`${p.count} d`} />)}
 
-          <label style={{ marginTop: 10 }}>ROWS</label>
-          <div className="tblwrap">
-            <table className="itbl">
-              <thead><tr><th>DATE</th><th>WK</th><th>PHASE</th><th>SESSION</th><th>KM</th></tr></thead>
-              <tbody>
-                {preview.rows.map((r) => (
-                  <tr key={r.date}>
-                    <td>{r.date}</td><td className="num">{r.weekNumber}</td><td>{r.phase}</td>
-                    <td>{r.summary}</td><td className="num">{r.plannedKm ?? ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <label style={{ marginTop: 10 }}>ROWS ({preview.rows.length})</label>
+          <div className="scrolllist">
+            {preview.rows.map((r) => (
+              <div className="rowcard" key={r.date}>
+                <span className="rc-d">{fmtDate(r.date)} · W{r.weekNumber}</span>
+                <span className="rc-s">{r.summary}</span>
+                <span className="rc-km">{r.plannedKm ?? ''}</span>
+              </div>
+            ))}
           </div>
 
           {preview.conflicts.length > 0 ? (

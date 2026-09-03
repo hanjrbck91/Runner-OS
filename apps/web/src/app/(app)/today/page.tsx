@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { api, type PlanView, type DailyView } from '../../../lib/api.js';
 import { show } from '../../../lib/format.js';
 import { useResource } from '../../../lib/useApi.js';
-import { Loading, ErrorBanner, KV, Panel } from '../../../components/ui.js';
+import { Loading, ErrorBanner, KV, Panel, Battery, Dm } from '../../../components/ui.js';
 
 function PlanLine({ k, v }: { k: string; v: string | null }) {
   if (!v) return null;
@@ -33,16 +33,16 @@ function Logged({ daily }: { daily: DailyView | null }) {
       {hasResponse ? (
         <>
           <div className="tagrow" style={{ marginTop: 8 }}><span className="tag tag-response">RESPONSE</span></div>
-          {d.runRpe != null && <KV k="RPE" v={String(d.runRpe)} />}
-          {d.painScore != null && <KV k="PAIN" v={d.painScore > 0 && d.painLocation ? `${d.painScore} · ${d.painLocation}` : String(d.painScore)} />}
-          {d.weight != null && <KV k="WEIGHT" v={show(d.weight, 'KG')} />}
-          {d.sleepHours != null && <KV k="SLEEP" v={show(d.sleepHours, 'H')} />}
-          {d.sleepQuality != null && <KV k="SLEEP Q" v={`${d.sleepQuality}/5`} />}
-          {d.readiness != null && <KV k="READINESS" v={`${d.readiness}/10`} />}
-          {d.stress != null && <KV k="STRESS" v={`${d.stress}/10`} />}
-          {d.motivation != null && <KV k="MOTIVATION" v={`${d.motivation}/10`} />}
+          {d.runRpe != null && <KV k="RPE" v={<Dm>{d.runRpe}</Dm>} />}
+          {d.painScore != null && <KV k="PAIN" v={d.painScore > 0 ? <span className="amber">● <Dm tone="amber">{d.painScore}</Dm>{d.painLocation ? ` · ${d.painLocation}` : ''}{d.painTiming ? ` · ${d.painTiming}` : ''}</span> : <Dm>0</Dm>} />}
+          {d.weight != null && <KV k="WEIGHT" v={<Dm>{show(d.weight)}</Dm>} />}
+          {d.sleepHours != null && <KV k="SLEEP" v={<Dm>{show(d.sleepHours)}</Dm>} />}
+          {d.sleepQuality != null && <KV k="SLEEP Q" v={<Battery value={d.sleepQuality} max={5} />} />}
+          {d.readiness != null && <KV k="READINESS" v={<Battery value={d.readiness} />} />}
+          {d.stress != null && <KV k="STRESS" v={<Battery value={d.stress} amber={d.stress > 7} />} />}
+          {d.motivation != null && <KV k="MOTIVATION" v={<Battery value={d.motivation} />} />}
           {d.nutritionAdherence ? <KV k="NUTRITION" v={d.nutritionAdherence} /> : null}
-          {d.noteText ? <KV k="NOTE" v={d.noteText} /> : null}
+          {d.noteText ? <KV k="NOTE" v={<span className="lcd" style={{ textTransform: 'none' }}>{d.noteText}</span>} /> : null}
         </>
       ) : null}
     </>
@@ -79,13 +79,16 @@ export default function TodayPage() {
             <PlanLine k="MILESTONE" v={d.plan.milestone} />
           </>
         ) : d.planStatus === 'NONE' ? (
-          <div className="muted center">NO PLAN SCHEDULED</div>
+          <div className="muted center">NO PLAN SCHEDULED · REST OR LOG UNPLANNED</div>
         ) : (
           <div className="msg err">PLAN CONFLICT — multiple active plans for today.</div>
         )}
       </Panel>
 
-      <Panel title="LOGGED"><Logged daily={d.daily} /></Panel>
+      <div className={`panel${d.daily?.painScore != null && d.daily.painScore > 0 ? ' attention' : ''}`}>
+        <h1>LOGGED</h1>
+        <Logged daily={d.daily} />
+      </div>
 
       <Link href="/log"><button className="primary">LOG TODAY →</button></Link>
     </div>

@@ -76,6 +76,7 @@ export interface WeeklyView {
   missedSessions: number;
   waist: number | null;
   reflectionText: string | null;
+  totalPlannedKm: number | null;
 }
 
 export interface UpcomingSession {
@@ -92,7 +93,9 @@ export interface PlanWeek {
   start: string;
   end: string;
   plannedKm: number;
+  actualKm: number;
   sessions: number;
+  completedSessions: number;
   status: 'DONE' | 'CURRENT' | 'UPCOMING';
   days: PlanDay[];
 }
@@ -109,6 +112,7 @@ export interface PlanOverview {
   completedWeeks: number;
   remainingWeeks: number;
   startsInDays: number | null;
+  daysToRace: number | null;
   dateRange: { start: string; end: string } | null;
   upcoming: UpcomingSession[];
   weeks: PlanWeek[];
