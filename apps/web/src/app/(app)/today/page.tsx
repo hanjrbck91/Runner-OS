@@ -4,25 +4,14 @@ import Link from 'next/link';
 import { api, type PlanView, type DailyView } from '../../../lib/api.js';
 import { show } from '../../../lib/format.js';
 import { useResource } from '../../../lib/useApi.js';
-import { Loading, ErrorBanner, KV, Panel, Battery, Dm } from '../../../components/ui.js';
+import { Loading, ErrorBanner, KV, Panel, Battery, Dm, Lamps } from '../../../components/ui.js';
 
 function PlanLine({ k, v }: { k: string; v: string | null }) {
   if (!v) return null;
-  return <KV k={k} v={v} />;
-}
-
-/** At-a-glance cockpit: which of the four log blocks are done today. */
-function LogStatus({ daily }: { daily: DailyView | null }) {
-  const run = !!daily && (daily.runActualKm != null || daily.runType != null || daily.runRpe != null || daily.painScore != null);
-  const gym = !!daily && daily.gymDone != null;
-  const state = !!daily && (daily.weight != null || daily.sleepHours != null || daily.readiness != null || daily.stress != null || daily.motivation != null || daily.sleepQuality != null);
-  const note = !!daily && !!daily.noteText;
-  const items: Array<[string, boolean]> = [['RUN', run], ['GYM', gym], ['STATE', state], ['NOTE', note]];
   return (
-    <div className="cockpit">
-      {items.map(([k, on]) => (
-        <div key={k} className={`st${on ? ' on' : ''}`}><span className="mk">{on ? '✓' : '·'}</span>{k}</div>
-      ))}
+    <div className="up">
+      <span className="d">{k}</span>
+      <span className="s sess">{v}</span>
     </div>
   );
 }
@@ -42,8 +31,8 @@ function Logged({ daily }: { daily: DailyView | null }) {
       {hasActual ? (
         <>
           <div className="tagrow"><span className="tag tag-actual">ACTUAL</span></div>
-          {d.runActualKm != null && <KV k="RUN" v={`${d.runType ? `${d.runType} · ` : ''}${show(d.runActualKm, 'KM')}`} />}
-          {d.gymDone != null && <KV k="GYM" v={d.gymDone ? `✓ DONE${d.gymType ? ` · ${d.gymType}` : ''}` : '— SKIPPED'} />}
+          {d.runActualKm != null && <KV k="RUN" v={<>{d.runType ? `${d.runType} · ` : ''}<Dm>{d.runActualKm}</Dm> KM</>} />}
+          {d.gymDone != null && <KV k="GYM" v={d.gymDone ? `DONE${d.gymType ? ` · ${d.gymType}` : ''}` : 'SKIPPED'} />}
         </>
       ) : null}
       {hasResponse ? (
@@ -51,8 +40,8 @@ function Logged({ daily }: { daily: DailyView | null }) {
           <div className="tagrow" style={{ marginTop: 8 }}><span className="tag tag-response">RESPONSE</span></div>
           {d.runRpe != null && <KV k="RPE" v={<Dm>{d.runRpe}</Dm>} />}
           {d.painScore != null && <KV k="PAIN" v={d.painScore > 0 ? <span className="amber">● <Dm tone="amber">{d.painScore}</Dm>{d.painLocation ? ` · ${d.painLocation}` : ''}{d.painTiming ? ` · ${d.painTiming}` : ''}</span> : <Dm>0</Dm>} />}
-          {d.weight != null && <KV k="WEIGHT" v={<Dm>{show(d.weight)}</Dm>} />}
-          {d.sleepHours != null && <KV k="SLEEP" v={<Dm>{show(d.sleepHours)}</Dm>} />}
+          {d.weight != null && <KV k="WEIGHT" v={<><Dm>{show(d.weight)}</Dm> <span className="dim">KG</span></>} />}
+          {d.sleepHours != null && <KV k="SLEEP" v={<><Dm>{show(d.sleepHours)}</Dm> <span className="dim">H</span></>} />}
           {d.sleepQuality != null && <KV k="SLEEP Q" v={<Battery value={d.sleepQuality} max={5} />} />}
           {d.readiness != null && <KV k="READINESS" v={<Battery value={d.readiness} />} />}
           {d.stress != null && <KV k="STRESS" v={<Battery value={d.stress} amber={d.stress > 7} />} />}
@@ -72,20 +61,29 @@ export default function TodayPage() {
   if (t.status === 'loading') return <Loading label="SYNCING" />;
   if (t.status === 'error') return <ErrorBanner error={t.error} onRetry={t.reload} />;
   const d = t.data!;
+  const dl = d.daily;
+  const painWarn = dl?.painScore != null && dl.painScore > 0;
+
+  const lamps: Array<{ label: string; state: 'on' | 'off' | 'warn' }> = [
+    { label: 'RUN', state: !dl ? 'off' : painWarn && (dl.runActualKm != null || dl.runType != null || dl.runRpe != null) ? 'warn' : (dl.runActualKm != null || dl.runType != null || dl.runRpe != null || dl.painScore != null) ? 'on' : 'off' },
+    { label: 'GYM', state: dl?.gymDone != null ? 'on' : 'off' },
+    { label: 'STATE', state: !dl ? 'off' : (dl.weight != null || dl.sleepHours != null || dl.readiness != null || dl.stress != null || dl.motivation != null || dl.sleepQuality != null) ? (dl.stress != null && dl.stress > 7 ? 'warn' : 'on') : 'off' },
+    { label: 'NOTE', state: dl?.noteText ? 'on' : 'off' },
+  ];
 
   return (
     <div>
       <Panel title="TODAY">
         <div className="big">{d.dateLabel}</div>
-        <div className="muted">
-          {d.weekNumber != null ? `WEEK ${String(d.weekNumber).padStart(2, '0')}` : 'WEEK —'}
-          {d.phase ? ` · ${d.phase}` : ''}
+        <div className="muted" style={{ letterSpacing: '0.06em' }}>
+          {d.weekNumber != null ? `WEEK ${String(d.weekNumber).padStart(2, '0')} / 20` : 'WEEK —'}
+          {d.phase ? ` · ${d.phase.toUpperCase()}` : ''}
         </div>
-        <LogStatus daily={d.daily} />
+        <Lamps items={lamps} />
       </Panel>
 
       <Panel title="TODAY'S PLAN">
-        <div className="tagrow" style={{ marginBottom: 6 }}><span className="tag tag-planned">PLANNED</span><span className="muted">coach</span></div>
+        <div className="tagrow"><span className="tag tag-planned">PLANNED</span><span className="muted">coach · read-only</span></div>
         {d.planStatus === 'FOUND' && d.plan ? (
           <>
             <PlanLine k="RUN" v={d.plan.runPlan} />
@@ -96,15 +94,15 @@ export default function TodayPage() {
             <PlanLine k="MILESTONE" v={d.plan.milestone} />
           </>
         ) : d.planStatus === 'NONE' ? (
-          <div className="muted center">NO PLAN SCHEDULED · REST OR LOG UNPLANNED</div>
+          <div className="muted center" style={{ padding: '6px 0' }}>NO PLAN SCHEDULED · REST OR LOG UNPLANNED</div>
         ) : (
           <div className="msg err">PLAN CONFLICT — multiple active plans for today.</div>
         )}
       </Panel>
 
-      <div className={`panel${d.daily?.painScore != null && d.daily.painScore > 0 ? ' attention' : ''}`}>
+      <div className={`panel${painWarn ? ' attention' : ''}`}>
         <h1>LOGGED</h1>
-        <Logged daily={d.daily} />
+        <Logged daily={dl} />
       </div>
 
       <Link href="/log"><button className="primary">LOG TODAY →</button></Link>

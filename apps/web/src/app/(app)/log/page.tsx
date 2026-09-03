@@ -84,8 +84,8 @@ const numOrOmit = (v: string) => (v.trim() === '' ? undefined : Number(v));
 function PlanCtx({ label, planned }: { label: string; planned: string | null }) {
   return (
     <Panel title={`${label} · TODAY'S PLAN`}>
-      <div className="tagrow"><span className="tag tag-planned">PLANNED</span><span className="muted">read-only</span></div>
-      <div className="big">{planned ?? 'NO PLAN SCHEDULED'}</div>
+      <div className="tagrow"><span className="tag tag-planned">PLANNED</span><span className="muted">coach · read-only</span></div>
+      {planned ? <div className="sess" style={{ marginTop: 4 }}>{planned}</div> : <div className="muted" style={{ marginTop: 4 }}>NO PLAN SCHEDULED</div>}
     </Panel>
   );
 }
@@ -167,16 +167,18 @@ function RunLogger({ daily, plan, onSaved }: { daily: DailyView | null; plan: Pl
         <label>DISTANCE (KM)</label>
         <input inputMode="decimal" value={km} onChange={(e) => setKm(e.target.value)} data-field="km" placeholder="actual km" />
 
-        <div className="tagrow" style={{ marginTop: 12 }}><span className="tag tag-response">RESPONSE</span></div>
-        <label>RPE — EFFORT</label>
-        <RpeGrid value={rpe} onChange={setRpe} field="rpe" />
-        <label>PAIN</label>
-        <div className="seg" data-field="pain">
-          {[0, 1, 2, 3].map((p) => (
-            <button type="button" key={p} className={pain === p ? 'sel' : ''} onClick={() => setPain(p)}>{p}</button>
-          ))}
+        <div className="submodule">
+          <div className="sublabel">RESPONSE</div>
+          <label style={{ marginTop: 2 }}>RPE — EFFORT</label>
+          <RpeGrid value={rpe} onChange={setRpe} field="rpe" />
+          <label>PAIN</label>
+          <div className="seg" data-field="pain">
+            {[0, 1, 2, 3].map((p) => (
+              <button type="button" key={p} className={pain === p ? 'sel' : ''} onClick={() => setPain(p)}>{p}</button>
+            ))}
+          </div>
+          <div className="muted" style={{ marginTop: 4 }}>{pain != null ? `${pain} · ${PAIN_LABELS[pain]}` : 'No pain rating yet'}</div>
         </div>
-        <div className="muted" style={{ marginTop: 4 }}>{pain != null ? `${pain} · ${PAIN_LABELS[pain]}` : 'No pain rating yet'}</div>
         {pain !== null && pain > 0 ? (
           <div className="attn-box" data-field="pain-detail">
             <div className="tagrow"><span className="tag tag-response">INJURY</span></div>

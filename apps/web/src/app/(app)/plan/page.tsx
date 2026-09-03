@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, type ImportPreview, type ImportResult, type PlanOverview, type PlanWeek } from '../../../lib/api.js';
 import { useResource } from '../../../lib/useApi.js';
 import { fmtDate, fmtRange } from '../../../lib/format.js';
-import { Loading, ErrorBanner, KV, Panel, Banner, Leds, Dm } from '../../../components/ui.js';
+import { Loading, ErrorBanner, KV, Panel, Banner, Leds, Dm, Readout } from '../../../components/ui.js';
 
 export default function PlanPage() {
   const loader = useCallback(() => api.planOverview(), []);
@@ -53,10 +53,22 @@ function Overview({ d }: { d: PlanOverview }) {
   return (
     <div>
       <Panel title="PLAN PROGRESS">
-        <div className="big">{started ? <>WEEK <Dm>{d.currentWeek}</Dm> / {d.totalWeeks}</> : <>STARTS IN <Dm>{d.startsInDays ?? '—'}</Dm> D</>}</div>
+        <div className="row" style={{ alignItems: 'stretch', marginBottom: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span className="dim" style={{ fontSize: 10, letterSpacing: '0.16em' }}>{started ? 'CURRENT WEEK' : 'STARTS IN'}</span>
+            <Readout hero value={started ? `${d.currentWeek}` : `${d.startsInDays ?? '—'}`} unit={started ? `/ ${d.totalWeeks}` : 'DAYS'} />
+          </div>
+          {d.daysToRace !== null ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span className="dim" style={{ fontSize: 10, letterSpacing: '0.16em' }}>RACE IN</span>
+              <Readout hero value={`${d.daysToRace}`} unit="DAYS" tone="amber" />
+            </div>
+          ) : null}
+        </div>
+
         {/* 20-segment LED journey — one segment per week. */}
         <Leds filled={d.completedWeeks} total={d.totalWeeks} />
-        <div className="muted" style={{ marginBottom: 8 }}>{d.completedWeeks} of {d.totalWeeks} weeks done · {d.remainingWeeks} remaining</div>
+        <div className="muted" style={{ marginBottom: 8, fontSize: 12 }}>{d.completedWeeks} of {d.totalWeeks} weeks done · {d.remainingWeeks} remaining</div>
 
         <div className="phasebar">
           {phases.map((p) => (
@@ -64,13 +76,12 @@ function Overview({ d }: { d: PlanOverview }) {
           ))}
         </div>
 
-        <KV k="PHASE" v={d.currentPhase ?? '—'} />
-        <KV k="THIS WEEK KM" v={<Dm tone="green">{d.currentWeekPlannedKm ?? '—'}</Dm>} />
-        {d.daysToRace !== null ? <KV k="RACE IN" v={<><Dm>{d.daysToRace}</Dm> <span className="muted">DAYS</span></>} /> : null}
-        <KV k="PLANNED KM" v={<Dm>{d.plannedTotalKm}</Dm>} />
+        <KV k="PHASE" v={(d.currentPhase ?? '—').toUpperCase()} />
+        <KV k="THIS WEEK KM" v={<><Dm tone="green">{d.currentWeekPlannedKm ?? '—'}</Dm> <span className="dim">KM</span></>} />
+        <KV k="PLANNED KM" v={<><Dm>{d.plannedTotalKm}</Dm> <span className="dim">KM</span></>} />
         {d.completionPercentage !== null ? (
           <>
-            <KV k="COMPLETED KM" v={<Dm tone="green">{d.completedKm}</Dm>} />
+            <KV k="COMPLETED KM" v={<><Dm tone="green">{d.completedKm}</Dm> <span className="dim">KM</span></>} />
             <KV k="COMPLETION" v={<Dm>{d.completionPercentage}%</Dm>} />
           </>
         ) : null}

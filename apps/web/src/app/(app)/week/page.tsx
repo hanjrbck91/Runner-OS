@@ -4,7 +4,7 @@ import { api } from '../../../lib/api.js';
 import { show, nutritionLabel } from '../../../lib/format.js';
 import { useResource } from '../../../lib/useApi.js';
 import { fmtRange } from '../../../lib/format.js';
-import { Loading, ErrorBanner, KV, Panel, Banner, Dm, Leds } from '../../../components/ui.js';
+import { Loading, ErrorBanner, KV, Panel, Banner, Dm, Leds, Readout } from '../../../components/ui.js';
 
 export default function WeekPage() {
   const loader = useCallback(() => api.weekly(), []);
@@ -35,30 +35,38 @@ export default function WeekPage() {
   return (
     <div>
       <Panel title="WEEK">
-        <div className="muted" style={{ marginBottom: 8 }}>{fmtRange(d.weekStart, d.weekEnd)}</div>
+        <div className="muted" style={{ marginBottom: 10, fontSize: 12, letterSpacing: '0.06em' }}>{fmtRange(d.weekStart, d.weekEnd)}</div>
 
-        {/* Planned vs actual KM — the core coaching question. */}
-        <div className="tagrow"><span className="tag tag-planned">PLANNED</span><Dm>{d.totalPlannedKm ?? '—'}</Dm><span className="muted">km</span>
-          <span className="tag tag-actual" style={{ marginLeft: 8 }}>ACTUAL</span><Dm tone="green">{d.totalRunningKm}</Dm><span className="muted">km</span></div>
+        {/* Planned vs actual mileage — the core coaching question. */}
+        <div className="row" style={{ marginBottom: 8 }}>
+          <div className="submodule" style={{ margin: 0 }}>
+            <div className="sublabel" style={{ color: 'var(--tan)' }}>PLANNED KM</div>
+            <Readout value={d.totalPlannedKm ?? '—'} />
+          </div>
+          <div className="submodule" style={{ margin: 0 }}>
+            <div className="sublabel" style={{ color: 'var(--teal-hi)' }}>ACTUAL KM</div>
+            <Readout value={d.totalRunningKm} tone="green" />
+          </div>
+        </div>
         {d.totalPlannedKm && d.totalPlannedKm > 0 ? (
-          <div className="wkbar"><span className="lab">KM</span><span className="track"><i style={{ width: `${Math.min(100, Math.round((d.totalRunningKm / d.totalPlannedKm) * 100))}%` }} /></span><span className="val">{Math.round((d.totalRunningKm / d.totalPlannedKm) * 100)}%</span></div>
+          <div className="wkbar"><span className="lab">KM {Math.round((d.totalRunningKm / d.totalPlannedKm) * 100)}%</span><span className="track"><i style={{ width: `${Math.min(100, Math.round((d.totalRunningKm / d.totalPlannedKm) * 100))}%` }} /></span><span className="val">{d.totalRunningKm}</span></div>
         ) : null}
 
         {d.completionPercentage !== null ? (
           <>
-            <label>COMPLETION</label>
+            <label>SESSION COMPLETION</label>
             <Leds filled={Math.round((d.completionPercentage / 100) * 7)} total={7} />
-            <div className="muted">{d.completionPercentage}% · {d.missedSessions} missed</div>
+            <div className="muted" style={{ fontSize: 12 }}>{d.completionPercentage}% · {d.missedSessions} missed</div>
           </>
         ) : null}
 
-        <div style={{ marginTop: 8 }}>
-          <KV k="LONGEST" v={<Dm>{d.longestRun ?? '—'}</Dm>} />
+        <div style={{ marginTop: 10 }}>
+          <KV k="LONGEST RUN" v={<><Dm>{d.longestRun ?? '—'}</Dm> <span className="dim">KM</span></>} />
           <KV k="RUNS" v={<Dm>{d.numberOfRuns}</Dm>} />
           <KV k="GYM" v={<Dm>{d.numberOfGymSessions}</Dm>} />
-          <KV k="AVG WEIGHT" v={<Dm>{show(d.averageWeight)}</Dm>} />
-          <KV k="WEIGHT TREND" v={show(d.weightTrend, 'KG')} />
-          <KV k="AVG SLEEP" v={<Dm>{show(d.averageSleep)}</Dm>} />
+          <KV k="AVG WEIGHT" v={<><Dm>{show(d.averageWeight)}</Dm> <span className="dim">KG</span></>} />
+          <KV k="WEIGHT TREND" v={<span className={d.weightTrend != null && Math.abs(d.weightTrend) > 1 ? 'amber' : ''}>{show(d.weightTrend, 'KG')}</span>} />
+          <KV k="AVG SLEEP" v={<><Dm>{show(d.averageSleep)}</Dm> <span className="dim">H</span></>} />
           <KV k="AVG RPE" v={<Dm>{show(d.averageRpe)}</Dm>} />
           <KV k="PAIN FLAGS" v={d.painFlagCount > 0 ? <span className="amber">● <Dm tone="amber">{d.painFlagCount}</Dm></span> : <Dm>0</Dm>} />
           <KV k="NUTRITION" v={nutritionLabel(d.nutritionAdherence)} />

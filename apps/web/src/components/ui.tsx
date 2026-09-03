@@ -33,6 +33,30 @@ export function Dm({ children, tone }: { children: ReactNode; tone?: 'amber' | '
   return <span className={`dm${tone ? ` ${tone}` : ''}`}>{children}</span>;
 }
 
+/** Framed digital readout window (recessed LCD look). */
+export function Readout({ value, unit, tone, hero }: { value: ReactNode; unit?: string; tone?: 'amber' | 'green'; hero?: boolean }) {
+  return (
+    <span className={`readout${hero ? ' hero' : ''}`}>
+      <span className={`val${tone ? ` ${tone}` : ''}`}>{value}</span>
+      {unit ? <span className="unit">{unit}</span> : null}
+    </span>
+  );
+}
+
+/** A row of physical status lamps (Today cockpit). */
+export function Lamps({ items }: { items: Array<{ label: string; state: 'on' | 'off' | 'warn' }> }) {
+  return (
+    <div className="lamps">
+      {items.map((it) => (
+        <div key={it.label} className={`lamp${it.state === 'on' ? ' on' : it.state === 'warn' ? ' warn' : ''}`}>
+          <span className="bulb" />
+          {it.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Segmented LED progress bar (hardware LED feel). */
 export function Leds({ filled, total, amber }: { filled: number; total: number; amber?: boolean }) {
   const n = Math.max(0, Math.min(total, Math.round(filled)));
