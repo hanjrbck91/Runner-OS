@@ -11,6 +11,22 @@ function PlanLine({ k, v }: { k: string; v: string | null }) {
   return <KV k={k} v={v} />;
 }
 
+/** At-a-glance cockpit: which of the four log blocks are done today. */
+function LogStatus({ daily }: { daily: DailyView | null }) {
+  const run = !!daily && (daily.runActualKm != null || daily.runType != null || daily.runRpe != null || daily.painScore != null);
+  const gym = !!daily && daily.gymDone != null;
+  const state = !!daily && (daily.weight != null || daily.sleepHours != null || daily.readiness != null || daily.stress != null || daily.motivation != null || daily.sleepQuality != null);
+  const note = !!daily && !!daily.noteText;
+  const items: Array<[string, boolean]> = [['RUN', run], ['GYM', gym], ['STATE', state], ['NOTE', note]];
+  return (
+    <div className="cockpit">
+      {items.map(([k, on]) => (
+        <div key={k} className={`st${on ? ' on' : ''}`}><span className="mk">{on ? '✓' : '·'}</span>{k}</div>
+      ))}
+    </div>
+  );
+}
+
 function Logged({ daily }: { daily: DailyView | null }) {
   const empty = !daily || (daily.weight == null && daily.sleepHours == null && daily.runActualKm == null
     && daily.gymDone == null && daily.painScore == null && !daily.noteText && !daily.nutritionAdherence
@@ -65,6 +81,7 @@ export default function TodayPage() {
           {d.weekNumber != null ? `WEEK ${String(d.weekNumber).padStart(2, '0')}` : 'WEEK —'}
           {d.phase ? ` · ${d.phase}` : ''}
         </div>
+        <LogStatus daily={d.daily} />
       </Panel>
 
       <Panel title="TODAY'S PLAN">
