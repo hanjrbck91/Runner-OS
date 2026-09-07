@@ -121,7 +121,9 @@ function TapScale({ label, value, onChange, max, amber, field }: { label: string
       <div className="tapscale" data-field={field}>
         <div className="cells">
           {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
-            <button type="button" key={n} className={value != null && n <= value ? 'on' : ''} aria-label={String(n)} onClick={() => onChange(n)} />
+            <button type="button" key={n}
+              className={value != null && n <= value ? (n === value ? 'on edge' : 'on') : ''}
+              aria-label={String(n)} onClick={() => onChange(n)} />
           ))}
         </div>
         <span className={`num${amber && value != null && value > 7 ? ' amber' : ''}`}>{value ?? '—'}</span>

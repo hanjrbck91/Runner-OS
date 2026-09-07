@@ -88,20 +88,33 @@ function Overview({ d }: { d: PlanOverview }) {
         {d.dateRange ? <KV k="RANGE" v={fmtRange(d.dateRange.start, d.dateRange.end)} /> : null}
       </Panel>
 
-      <Panel title="UPCOMING">
+      <Section title="UPCOMING" count={d.upcoming.length}>
         {d.upcoming.length === 0 ? <div className="muted">RECOVERY MODE · no upcoming sessions.</div> : d.upcoming.map((u) => (
           <div className="up" key={u.date}>
             <span className="d">{fmtDate(u.date)}{u.weekNumber ? ` · W${u.weekNumber}` : ''}</span>
             <span className="s">{u.session}{u.plannedKm !== null ? <> · <Dm tone="green">{u.plannedKm}</Dm>km</> : null}</span>
           </div>
         ))}
-      </Panel>
+      </Section>
 
-      <Panel title="20-WEEK PLAN">
+      <Section title="20-WEEK PLAN" count={d.weeks.length}>
         <div className="muted" style={{ marginBottom: 8 }}>Tap a week to see its sessions.</div>
         {d.weeks.map((w) => <WeekRow key={w.weekNumber} w={w} />)}
-      </Panel>
+      </Section>
     </div>
+  );
+}
+
+/** Collapsible parent module — native <details>, no animation. Default open. */
+function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
+  return (
+    <details className="panel section" open>
+      <summary>
+        <span>{title}</span>
+        {count != null ? <span className="sec-count">{count}</span> : null}
+      </summary>
+      <div className="sec-body">{children}</div>
+    </details>
   );
 }
 
