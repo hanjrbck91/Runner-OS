@@ -46,7 +46,7 @@ export default function LogPage() {
   const tabs: Array<[Tab, string]> = [['run', 'RUN'], ['gym', 'GYM'], ['state', 'STATE'], ['note', 'NOTE']];
 
   return (
-    <div>
+    <div className="logpage">
       <Panel title="LOG">
         <div className="big">{fmtDate(d.date)}</div>
         <div className="muted">
