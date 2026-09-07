@@ -179,11 +179,14 @@ describe('M07-D — API handlers', () => {
   });
 
   it('T22 export contains only the authenticated user\'s data', async () => {
-    await H.saveRun(env, { session: valid, body: { km: 12 } });         // user A
+    await H.saveRun(env, { session: valid, body: { km: 37.5 } });       // user A (distinctive, non-date value)
     const envB: Env = { ...env, allowedEmail: other.email };
     const ex = await H.exportWeek(envB, { session: other });            // user B
     expect(ex.status).toBe(200);
-    expect(ex.csv).not.toContain('12'); // none of A's actuals leak into B's export
+    // B has no data: every actual_km cell (column index 7) must be empty.
+    const [, ...rows] = ex.csv!.trim().split('\r\n');
+    for (const r of rows) expect(r.split(',')[7]).toBe('');
+    expect(ex.csv).not.toContain('37.5'); // none of A's actuals leak into B's export
   });
 
   it('T23 note/form-state isolation: each log writes only its own fields', async () => {

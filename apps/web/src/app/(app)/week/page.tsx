@@ -44,7 +44,7 @@ export default function WeekPage() {
             <Readout value={d.totalPlannedKm ?? '—'} />
           </div>
           <div className="submodule" style={{ margin: 0 }}>
-            <div className="sublabel" style={{ color: 'var(--teal-hi)' }}>ACTUAL KM</div>
+            <div className="sublabel" style={{ color: 'var(--cream)' }}>ACTUAL KM</div>
             <Readout value={d.totalRunningKm} tone="green" />
           </div>
         </div>
