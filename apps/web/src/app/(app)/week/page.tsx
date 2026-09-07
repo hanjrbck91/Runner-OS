@@ -40,11 +40,11 @@ export default function WeekPage() {
         {/* Planned vs actual mileage — the core coaching question. */}
         <div className="row" style={{ marginBottom: 8 }}>
           <div className="submodule" style={{ margin: 0 }}>
-            <div className="sublabel" style={{ color: 'var(--tan)' }}>PLANNED KM</div>
+            <div className="sublabel" style={{ color: 'var(--brass)' }}>PLANNED KM</div>
             <Readout value={d.totalPlannedKm ?? '—'} />
           </div>
           <div className="submodule" style={{ margin: 0 }}>
-            <div className="sublabel" style={{ color: 'var(--cream)' }}>ACTUAL KM</div>
+            <div className="sublabel" style={{ color: 'var(--ink)' }}>ACTUAL KM</div>
             <Readout value={d.totalRunningKm} tone="green" />
           </div>
         </div>

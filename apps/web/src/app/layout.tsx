@@ -22,12 +22,12 @@ export const metadata: Metadata = {
   applicationName: 'Runner OS',
   description: 'Personal athletic operating system.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Runner OS', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: 'Runner OS', statusBarStyle: 'default' },
   icons: { icon: '/icon-192.png', apple: '/apple-touch-icon.png' },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0b0c09',
+  themeColor: '#EAE3CF',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
