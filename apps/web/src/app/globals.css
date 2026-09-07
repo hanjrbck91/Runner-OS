@@ -1,7 +1,7 @@
 /* Runner OS — VINTAGE CREAM DIGITAL TRAINING INSTRUMENT. THEME LOCKED (MC-028.3).
    The whole device is aged cream/ivory plastic. Writing is near-black. Dark is
    confined to embedded LCD windows, indicator wells, the primary action key and
-   text. Olive/brass = subtle structure. Teal = selected controls only.
+   text. Olive/brass = structure + selection. No blue/teal.
    Orange-red = attention only. No bright yellow. */
 
 :root {
@@ -19,9 +19,11 @@
   --olive: #7A7846;        /* STRUCTURAL — lit segments, LEDs, brass detail */
   --olive-soft: #A79F79;   /* subtle divider tint */
   --brass: #8A6E38;
-  --teal: #2C877D;         /* INTERACTIVE / SELECTED state only */
-  --teal-hi: #37A093;
-  --teal-dim: #1B564F;
+  /* MC-028.5: no blue/teal selection anywhere. These aliases keep the token
+     names but resolve to the approved olive/brass selection language. */
+  --teal: var(--olive);
+  --teal-hi: var(--olive);
+  --teal-dim: var(--ink-2);
   --attn: #BF4F1E;         /* ATTENTION only — pain, warning, error */
   --attn-hi: #D6642E;
   --attn-dim: #7E3714;
@@ -161,7 +163,7 @@ button.primary {
 button.primary:active { background: linear-gradient(180deg, #201D14, #16140D); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 rgba(120,105,70,0.4); }
 button:disabled { opacity: .4; cursor: default; }
 
-/* selected interactive state = teal (only teal fill) */
+/* selected interactive state = olive fill */
 .seg { display: flex; gap: 4px; flex-wrap: wrap; }
 .seg button { width: auto; flex: 1; min-width: 46px; padding: 10px 4px; min-height: 44px; }
 .seg button.sel, .toggle button.sel, .chips button.sel, .rpe button.sel {
@@ -304,8 +306,8 @@ details.wk[open] > summary::before { content: '▾'; }
 details.wk .wk-h { color: var(--ink-2); min-width: 58px; letter-spacing: 1px; font-weight: 700; font-size: 12px; flex: 0 0 auto; }
 details.wk .wk-ph { flex: 1; color: var(--ink-dim); font-size: 11px; }
 details.wk .wk-km { color: var(--ink); font-family: var(--font-dm); font-size: 16px; }
-details.wk-current > summary { background: rgba(44,135,125,0.09); box-shadow: inset 3px 0 0 var(--teal); }
-details.wk-current > summary .wk-h { color: var(--teal-dim); }
+details.wk-current > summary { background: color-mix(in srgb, var(--olive) 10%, transparent); box-shadow: inset 3px 0 0 var(--olive); }
+details.wk-current > summary .wk-h { color: var(--ink-2); }
 details.wk > div .up:last-child { border-bottom: none; }
 
 /* planned / actual / response tags */
@@ -330,19 +332,10 @@ details.wk > div .up:last-child { border-bottom: none; }
 .attn-box { border: 1px solid var(--attn); box-shadow: inset 3px 0 0 var(--attn); border-radius: 1px; padding: 9px 11px; margin-top: 10px; background: linear-gradient(0deg, rgba(191,79,30,0.06), rgba(191,79,30,0.06)), var(--panel-2); }
 
 /* ============================================================
-   LOG PAGE ONLY (MC-028.4) — no teal on selection. Cream body,
-   dark ink, olive/brass marks the selected state. Orange stays
-   attention-only. Other pages are untouched.
-   Redefine the teal tokens inside the Log subtree so every
-   `var(--teal*)` resolves to olive here — cannot bleed to other pages. */
-.logpage { --teal: var(--olive); --teal-hi: var(--olive); --teal-dim: var(--ink-2); }
-/* bottom nav active item on the Log page: olive, not teal. Static attribute
-   selector (Nav sets data-section) — other pages keep the approved treatment. */
-.nav[data-section="log"] button.active {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--olive) 12%, transparent);
-  box-shadow: inset 0 2px 0 var(--olive);
-}
+   LOG PAGE (MC-028.4, approved reference). Selected controls read as cream
+   keycaps with an inset olive bottom-edge — the shape treatment. Colour is
+   already olive everywhere (MC-028.5 made --teal* resolve to olive globally). */
+.nav[data-section="log"] button.active { color: var(--ink); }
 .logpage .logtabs button.sel {
   background: linear-gradient(180deg, var(--panel-hi), var(--panel));
   color: var(--ink); font-weight: 700;
