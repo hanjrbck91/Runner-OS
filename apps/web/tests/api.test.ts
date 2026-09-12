@@ -341,6 +341,23 @@ describe('M07-D — API handlers', () => {
     expect(d2.gymType).toBe('Strength'); expect(d2.weight).toBe(74); expect(d2.noteText).toBe('good day');
   });
 
+  it('T34 comma-separated allowlist admits two users from one env value, isolated (MC-030)', async () => {
+    const friend = { email: 'friend@gmail.com' };
+    const sharedEnv: Env = { ...env, allowedEmail: `${ALLOWED},${friend.email}` };
+    // both identities in the single list authenticate
+    expect((await H.today(sharedEnv, { session: valid })).status).toBe(200);
+    expect((await H.today(sharedEnv, { session: friend })).status).toBe(200);
+    // a third identity, still not listed, is still rejected
+    expect((await H.today(sharedEnv, { session: other })).status).toBe(403);
+    // each logs independently and never sees the other's data
+    await H.saveWeight(sharedEnv, { session: valid, body: { weight: 70 } });
+    await H.saveWeight(sharedEnv, { session: friend, body: { weight: 90 } });
+    const mine = body(await H.today(sharedEnv, { session: valid })).data.daily;
+    const friends = body(await H.today(sharedEnv, { session: friend })).data.daily;
+    expect(mine.weight).toBe(70);
+    expect(friends.weight).toBe(90);
+  });
+
   it('T17 no DB internals leak; 404 mapping; safe error shape', async () => {
     const r = await H.plan(env, { session: valid, query: { date: '2026-01-15' } });
     expect(r.status).toBe(404);

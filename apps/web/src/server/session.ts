@@ -8,13 +8,14 @@
  */
 import type { UserContext } from '@runner-os/core';
 import { unauthenticated, forbidden, type ApiResult } from './http.js';
+import { isAllowedEmail } from './authz.js';
 
 export interface SessionInfo {
   readonly email: string;
 }
 
 export interface AuthEnv {
-  /** The single V1 allowed email (from env, never hardcoded). */
+  /** One or more allowed emails, comma-separated (env, never hardcoded). */
   readonly allowedEmail: string;
   /** Resolve an authenticated email to its stable userId (creates on first use). */
   readonly getUserId: (email: string) => Promise<string>;
@@ -26,7 +27,7 @@ export type AuthOutcome =
 
 export async function authenticate(env: AuthEnv, session: SessionInfo | null): Promise<AuthOutcome> {
   if (!session || !session.email) return { ok: false, response: unauthenticated() };
-  if (session.email !== env.allowedEmail) return { ok: false, response: forbidden() };
+  if (!isAllowedEmail(session.email, env.allowedEmail)) return { ok: false, response: forbidden() };
   const userId = await env.getUserId(session.email);
   return { ok: true, ctx: { userId, actor: session.email } };
 }

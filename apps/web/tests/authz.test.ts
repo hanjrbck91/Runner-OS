@@ -27,6 +27,24 @@ describe('MC-020 — Google OAuth + allowlist', () => {
     expect(isAllowedEmail('', '')).toBe(false);
   });
 
+  it('T7 comma-separated allowlist admits any listed email (MC-030)', () => {
+    const list = 'me@gmail.com,friend@gmail.com';
+    expect(isAllowedEmail('me@gmail.com', list)).toBe(true);
+    expect(isAllowedEmail('friend@gmail.com', list)).toBe(true);
+    expect(isAllowedEmail('Friend@Gmail.com', list)).toBe(true); // case-insensitive
+    expect(isAllowedEmail(' friend@gmail.com ', list)).toBe(true); // tolerant of stray whitespace on the identity side too
+  });
+
+  it('T8 comma-separated allowlist still rejects everyone else', () => {
+    const list = 'me@gmail.com,friend@gmail.com';
+    expect(isAllowedEmail('stranger@gmail.com', list)).toBe(false);
+    expect(isAllowedEmail('', list)).toBe(false);
+  });
+
+  it('T9 allowlist tolerates spaces around commas / a trailing comma', () => {
+    expect(isAllowedEmail('friend@gmail.com', ' me@gmail.com , friend@gmail.com ,')).toBe(true);
+  });
+
   it('T4 allowlist gates BOTH providers via the signIn callback', () => {
     expect(/signIn\(\{\s*user\s*\}\)\s*\{[\s\S]*isAllowedEmail\(user\?\.email,\s*process\.env\.AUTH_ALLOWED_EMAIL\)/.test(authSrc)).toBe(true);
   });
